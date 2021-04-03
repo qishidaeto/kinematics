@@ -19,20 +19,29 @@ MaterialPoint createMaterialPoint()
 
 	std::cout << "force and it's direction(angle): ";
 	float force_absValue;
-	std::cin >> force_absValue;
-
 	float force_angleToHorizon;
-	std::cin >> force_angleToHorizon;
+	std::cin >> force_absValue >> force_angleToHorizon;
 
-	glm::vec3 force = { force_absValue * cos(d2r(force_angleToHorizon)), force_absValue * sin(d2r(force_angleToHorizon)), 0.0f };
+	glm::vec3 force = {
+		force_absValue * cos(d2r(force_angleToHorizon)),
+		force_absValue * sin(d2r(force_angleToHorizon)),
+		0.0f };
 
-		MaterialPoint object(mass, force);
-		return object;
+	std::cout << "coordinates: ";
+	float x;
+	float y;
+	std::cin >> x >> y;
+	glm::vec3 coordinates = { x, y, 0.0f };
+
+	MaterialPoint object(mass, force, coordinates);
+	return object;
 }
 
 int main()
 {
 	MaterialPoint object = createMaterialPoint();
+
+
 
 	return 0;
 }
