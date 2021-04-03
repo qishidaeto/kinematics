@@ -41,7 +41,31 @@ int main()
 {
 	MaterialPoint object = createMaterialPoint();
 
+	float elapsedTime = 0.0f;
 
+	std::cout << "time: ";
+	float time;
+	std::cin >> time;
+
+	float currentTime = elapsedTime;
+	float dt = 0.2f;
+
+	while (currentTime <= elapsedTime + time)
+	{
+		object.velocity.x = object.acceleration.x * dt;
+		object.velocity.y = object.acceleration.y * dt;
+
+		object.coordinates.x += object.velocity.x * dt;
+		object.coordinates.y += object.velocity.y * dt;
+
+		object.distance += sqrt(pow(object.velocity.x, 2) + pow(object.velocity.y, 2)) * dt;
+
+		currentTime += dt;
+	}
+
+	elapsedTime += time;
+
+	std::cout << object.distance;
 
 	return 0;
 }

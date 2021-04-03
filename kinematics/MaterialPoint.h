@@ -23,13 +23,17 @@ public:
 		velocity.x = 0.0f;
 		velocity.y = 0.0f;
 		velocity.z = 0.0f;
+
+		distance = 0;
 	}
 
-private:
+
 	float mass;
 	glm::vec3 force;
 	glm::vec3 velocity;
 	glm::vec3 acceleration;
 	glm::vec3 coordinates;
+	float distance;
 
+	float elapsedTime;
 };
