@@ -27,13 +27,10 @@ public:
 		distance = 0;
 	}
 
-
 	float mass;
 	glm::vec3 force;
 	glm::vec3 velocity;
 	glm::vec3 acceleration;
 	glm::vec3 coordinates;
 	float distance;
-
-	float elapsedTime;
 };
