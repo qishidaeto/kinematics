@@ -1,6 +1,14 @@
 #include <iostream>
 #include "MaterialPoint.h"
 
+//GLEW
+#define GLEW_STATIC
+#include <GLEW/glew.h>
+
+//GLFW
+#include <GLFW/glfw3.h>
+
+
 //GLM
 #include <glm/vec3.hpp>
 
@@ -37,35 +45,79 @@ MaterialPoint createMaterialPoint()
 	return object;
 }
 
+
+const GLuint WIDTH = 1366, HEIGHT = 768;
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+
 int main()
 {
-	MaterialPoint object = createMaterialPoint();
+	glfwInit();
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-	float elapsedTime = 0.0f;
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Kinematics", nullptr, nullptr);
+	glfwMakeContextCurrent(window);
 
-	std::cout << "time: ";
-	float time;
-	std::cin >> time;
+	glfwSetKeyCallback(window, key_callback);
 
-	float currentTime = elapsedTime;
-	float dt = 0.2f;
+	glewExperimental = GL_TRUE;
+	glewInit();
 
-	while (currentTime <= elapsedTime + time)
+	int width, height;
+	glfwGetFramebufferSize(window, &width, &height);
+	glViewport(0, 0, width, height);
+
+	while (!glfwWindowShouldClose(window))
 	{
-		object.velocity.x = object.acceleration.x * dt;
-		object.velocity.y = object.acceleration.y * dt;
+		glfwPollEvents();
 
-		object.coordinates.x += object.velocity.x * dt;
-		object.coordinates.y += object.velocity.y * dt;
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
 
-		object.distance += sqrt(pow(object.velocity.x, 2) + pow(object.velocity.y, 2)) * dt;
 
-		currentTime += dt;
+
+
+
+		glfwSwapBuffers(window);
 	}
 
-	elapsedTime += time;
-
-	std::cout << object.distance;
+	glfwTerminate();
 
 	return 0;
 }
+
+	void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+	{
+		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+			glfwSetWindowShouldClose(window, GL_TRUE);
+	}
+
+	/*MaterialPoint object = createMaterialPoint();
+
+float elapsedTime = 0.0f;
+
+std::cout << "time: ";
+float time;
+std::cin >> time;
+
+float currentTime = elapsedTime;
+float dt = 0.2f;
+
+while (currentTime <= elapsedTime + time)
+{
+	object.velocity.x = object.acceleration.x * dt;
+	object.velocity.y = object.acceleration.y * dt;
+
+	object.coordinates.x += object.velocity.x * dt;
+	object.coordinates.y += object.velocity.y * dt;
+
+	object.distance += sqrt(pow(object.velocity.x, 2) + pow(object.velocity.y, 2)) * dt;
+
+	currentTime += dt;
+}
+
+elapsedTime += time;
+
+std::cout << object.distance;*/
