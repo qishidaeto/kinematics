@@ -1,5 +1,6 @@
 // Std. Includes
 #include <iostream>
+#include <vector>
 
 // GLEW
 #define GLEW_STATIC
@@ -82,10 +83,10 @@ GLfloat lastFrame = 0.0f;
 
 void Do_Movement();
 
-// Transformation matrices
-glm::mat4 model(1.0f);
-glm::mat4 view(1.0f);
-glm::mat4 projection(1.0f);
+// Objects
+std::vector<MaterialPoint> objects;
+void createObject();
+void doObjectMovement();
 
 int main()
 {
@@ -115,6 +116,11 @@ int main()
 	Shader shader("shader.vs", "shader.frag");
 	coordinateSystem XYZ;
 
+	glEnable(GL_LINE_SMOOTH);
+	glLineWidth(1.0f);
+
+	glEnable(GL_DEPTH_TEST);
+
 	while (!glfwWindowShouldClose(window))
 	{
 		// Set frame time
@@ -128,19 +134,13 @@ int main()
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
 		shader.Use();
 
-		glm::mat4 model;
-		glm::mat4 view;
-		glm::mat4 projection;
-
-		model = glm::mat4(1.0f);
-		view = camera.GetViewMatrix();
-		projection = glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.001f, 1000000.0f);
-
-		shader.setMatrix4("model", model);
-		shader.setMatrix4("view", view);
-		shader.setMatrix4("projection", projection);
+		// Load transformation matrices into shader
+		shader.setMatrix4("model", glm::mat4(1.0f));
+		shader.setMatrix4("view", camera.GetViewMatrix());
+		shader.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.001f, 1000000.0f));
 
 		glBindVertexArray(XYZ.VAO);
 		glDrawArrays(GL_LINE_STRIP, 0, 2);
@@ -149,13 +149,44 @@ int main()
 		glBindVertexArray(0);
 
 
-		glFlush();
 		glfwSwapBuffers(window);
 	}
 
 	glfwTerminate();
 
 	return 0;
+}
+
+void createObject()
+{
+	std::cout << "Enter the object name: ";
+	std::string name;
+	std::cin >> name;
+
+	std::cout << "Enter the mass of the object: ";
+	float mass;
+	std::cin >> mass;
+
+	std::cout << "Enter the radius-vector of the force of the object(x, y, z): ";
+	float Fx, Fy, Fz;
+	std::cin >> Fx >> Fy >> Fz;
+	glm::vec3 force = { Fx, Fy, Fz };
+
+
+	std::cout << "Enter the starting position of the object(x, y, z): ";
+	float x, y, z;
+	std::cin >> x >> y >> z;
+	glm::vec3 coordinates = { x, y, z };
+
+	MaterialPoint object(name, mass, force, coordinates);
+	objects.push_back(object);
+}
+
+void doObjectMovement()
+{
+	//calculate charachteristics
+	//update buffer
+	//draw array
 }
 
 void Do_Movement()
@@ -182,6 +213,12 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		else if (action == GLFW_RELEASE)
 			keys[key] = false;
 	}
+
+	if (key == GLFW_KEY_N && action == GLFW_PRESS)
+		createObject();
+
+	//if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+	//	doObjectMovement();
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
