@@ -1,4 +1,4 @@
-// STD INCLUDES
+// Std. Includes
 #include <iostream>
 
 // GLEW
@@ -11,18 +11,14 @@
 // GLM
 #include <glm/vec3.hpp>
 
-// MATH
+// Std. Math
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-// CLASSES
+// Classes
 #include "MaterialPoint.h"
 #include "Shader.h"
 #include "Camera.h"
-
-const GLuint WIDTH = 1366, HEIGHT = 768;
-
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 struct coordinateSystem
 {
@@ -67,6 +63,15 @@ struct coordinateSystem
 	GLuint VAO, VBO;
 };
 
+
+const GLuint screenWidth = 1366, screenHeight = 768;
+
+// Callback-functions
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+
+// Camera
+Camera camera(glm::vec3(10.0f, 10.0f, 10.0f));
+
 int main()
 {
 	glfwInit();
@@ -75,10 +80,11 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Kinematics", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "Kinematics", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 
 	glfwSetKeyCallback(window, key_callback);
+
 
 	glewExperimental = GL_TRUE;
 	glewInit();
@@ -87,7 +93,9 @@ int main()
 	glfwGetFramebufferSize(window, &width, &height);
 	glViewport(0, 0, width, height);
 
-	Shader axesShader("axes.vs", "axes.frag");
+
+	Shader axesShader("fragment.shader", "vertex.shader");
+	coordinateSystem XYZ;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -95,6 +103,15 @@ int main()
 
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		glm::mat4 model;
+		glm::mat4 view;
+		glm::mat4 projection;
+
+		model = glm::mat4(1.0f);
+		view = camera.GetViewMatrix();
+		projection = glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.01f, 1000.0f);
+
 
 
 
