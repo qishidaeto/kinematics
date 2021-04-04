@@ -63,7 +63,7 @@ struct coordinateSystem
 	GLuint VAO, VBO;
 };
 
-const GLuint screenWidth = 1366, screenHeight = 768;
+const GLuint screenWidth = 1920, screenHeight = 1080;
 
 // Callback-functions
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -102,6 +102,9 @@ int main()
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 
+	// Hide the cursor and hold it in the window
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 	glewExperimental = GL_TRUE;
 	glewInit();
 
@@ -109,21 +112,44 @@ int main()
 	glfwGetFramebufferSize(window, &width, &height);
 	glViewport(0, 0, width, height);
 
-
 	Shader shader("shader.vs", "shader.frag");
 	coordinateSystem XYZ;
 
 	while (!glfwWindowShouldClose(window))
 	{
+		// Set frame time
+		GLfloat currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
 		glfwPollEvents();
+		Do_Movement();
 
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		shader.Use();
+
+		glm::mat4 model;
+		glm::mat4 view;
+		glm::mat4 projection;
 
 		model = glm::mat4(1.0f);
 		view = camera.GetViewMatrix();
-		projection = glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.01f, 1000.0f);
+		projection = glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.001f, 1000000.0f);
 
+		shader.setMatrix4("model", model);
+		shader.setMatrix4("view", view);
+		shader.setMatrix4("projection", projection);
+
+		glBindVertexArray(XYZ.VAO);
+		glDrawArrays(GL_LINE_STRIP, 0, 2);
+		glDrawArrays(GL_LINE_STRIP, 2, 2);
+		glDrawArrays(GL_LINE_STRIP, 4, 2);
+		glBindVertexArray(0);
+
+
+		glFlush();
 		glfwSwapBuffers(window);
 	}
 
