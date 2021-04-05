@@ -84,9 +84,14 @@ GLfloat lastFrame = 0.0f;
 void Do_Movement();
 
 // Objects
+MaterialPoint* controlledObject;
 std::vector<MaterialPoint> objects;
 void createObject();
-void doObjectMovement();
+void printObjectList();
+void selectObject();
+
+//Rendering
+GLfloat renderingDeltaTime = 0;
 
 int main()
 {
@@ -121,6 +126,8 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 
+
+
 	while (!glfwWindowShouldClose(window))
 	{
 		// Set frame time
@@ -128,19 +135,19 @@ int main()
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
+		renderingDeltaTime += deltaTime;
+
 		glfwPollEvents();
 		Do_Movement();
 
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
 		shader.Use();
-
 		// Load transformation matrices into shader
 		shader.setMatrix4("model", glm::mat4(1.0f));
 		shader.setMatrix4("view", camera.GetViewMatrix());
-		shader.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.001f, 1000000.0f));
+		shader.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 10000.0f));
 
 		glBindVertexArray(XYZ.VAO);
 		glDrawArrays(GL_LINE_STRIP, 0, 2);
@@ -148,6 +155,16 @@ int main()
 		glDrawArrays(GL_LINE_STRIP, 4, 2);
 		glBindVertexArray(0);
 
+		for (int i = 0; i < objects.size(); ++i)
+			objects[i].drawTrajectory();
+
+		if (renderingDeltaTime >= 0.005)
+		{
+			for (int i = 0; i < objects.size(); ++i)
+				objects[i].computeInstantCharachteristics(renderingDeltaTime);
+
+			renderingDeltaTime = 0;
+		}
 
 		glfwSwapBuffers(window);
 	}
@@ -157,8 +174,30 @@ int main()
 	return 0;
 }
 
+void printObjectList()
+{
+	system("cls");
+
+	for (int i = 0; i < objects.size(); ++i)
+		std::cout << i + 1 << ". " << objects[i].getObjectName() << std::endl;
+}
+
+void selectObject()
+{
+	system("cls");
+
+	printObjectList();
+	std::cout << "Select object you want to control: ";
+	int object_num;
+	std::cin >> object_num;
+
+	controlledObject = &objects[object_num - 1];
+}
+
 void createObject()
 {
+	system("cls");
+
 	std::cout << "Enter the object name: ";
 	std::string name;
 	std::cin >> name;
@@ -180,13 +219,8 @@ void createObject()
 
 	MaterialPoint object(name, mass, force, coordinates);
 	objects.push_back(object);
-}
 
-void doObjectMovement()
-{
-	//calculate charachteristics
-	//update buffer
-	//draw array
+	system("cls");
 }
 
 void Do_Movement()
@@ -217,8 +251,22 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	if (key == GLFW_KEY_N && action == GLFW_PRESS)
 		createObject();
 
-	//if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-	//	doObjectMovement();
+	if (key == GLFW_KEY_M && action == GLFW_PRESS)
+		printObjectList();
+
+	if (key == GLFW_KEY_C && action == GLFW_PRESS)
+		selectObject();
+
+	if (key == GLFW_KEY_B && action == GLFW_RELEASE)
+	{
+		objects[0].printObjectCoordinates();
+	}
+
+	if (key == GLFW_KEY_R && action == GLFW_RELEASE)
+	{
+		system("cls");
+		std::cout << renderingDeltaTime << std::endl;
+	}
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
