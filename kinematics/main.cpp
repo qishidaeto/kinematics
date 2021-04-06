@@ -55,6 +55,15 @@ struct coordinateSystem
 		glBindVertexArray(0);
 	}
 
+	void draw()
+	{
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_LINE_STRIP, 0, 2);
+		glDrawArrays(GL_LINE_STRIP, 2, 2);
+		glDrawArrays(GL_LINE_STRIP, 4, 2);
+		glBindVertexArray(0);
+	}
+
 	~coordinateSystem()
 	{
 		glDeleteVertexArrays(1, &VAO);
@@ -149,11 +158,7 @@ int main()
 		shader.setMatrix4("view", camera.GetViewMatrix());
 		shader.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 10000.0f));
 
-		glBindVertexArray(XYZ.VAO);
-		glDrawArrays(GL_LINE_STRIP, 0, 2);
-		glDrawArrays(GL_LINE_STRIP, 2, 2);
-		glDrawArrays(GL_LINE_STRIP, 4, 2);
-		glBindVertexArray(0);
+		XYZ.draw();
 
 		for (int i = 0; i < objects.size(); ++i)
 			objects[i].drawTrajectory();
