@@ -1,13 +1,13 @@
 #pragma once
 
 //GLM
+#define GLM_FORCE_RADIANS
 #include <glm/vec3.hpp>
+#include <glm/trigonometric.hpp>
 
 #include <fstream>
 #include <iostream>
 #include <string>
-
-#include <math.h>
 
 #define GLEW_STATIC
 #include <GLEW/glew.h>
@@ -16,24 +16,18 @@ class MaterialPoint
 {
 public:
 	MaterialPoint(
-		std::string new_name,
-		const float& new_mass,
-		const glm::vec3& new_force,
-		const glm::vec3& new_coordinates
-	)
+		std::string name,
+		const float& mass,
+		const float& forceAbsValue,
+		const float& theta,
+		const float& ph,
+		const glm::vec3& coordinates
+	) : name(name), mass(mass), forceAbsValue(forceAbsValue), theta(theta), ph(ph), coordinates(coordinates)
 	{
-		name = new_name;
-		mass = new_mass;
-		force = new_force;
-
-		coordinates = new_coordinates;
 		updateCoordinateData();
+		
+		velocity = { 0.0f, 0.0f, 0.0f };
 
-		velocity.x = 0.0f;
-		velocity.y = 0.0f;
-		velocity.z = 0.0f;
-
-		distance = 0;
 		trajectoryVertices = 0;
 
 		glGenBuffers(1, &VBO);
@@ -42,27 +36,36 @@ public:
 
 	void computeInstantCharachteristics(const float& dt)
 	{
+		// Fx = F * sin(theta) * cos(ph)
+		force.x = forceAbsValue * cos(glm::radians(theta)) * cos(glm::radians(ph));
+		// Fy = F * sin(theta) * sin(ph)
+		force.y = forceAbsValue * sin(glm::radians(theta)) * sin(glm::radians(ph));
+		// Fz = F * cos(theta)
+		force.z = forceAbsValue * cos(glm::radians(theta));
+
+		// ax = Fx / m
 		fullAcceleration.x = force.x / mass;
+		// ay = Fy / m
 		fullAcceleration.y = force.y / mass;
+		// az = Fz / m
 		fullAcceleration.z = force.z / mass;
 
 		//Vx = V0x + ax*dt
 		velocity.x += fullAcceleration.x * dt;
+		//Vy = V0y + ay*dt
 		velocity.y += fullAcceleration.y * dt;
+		//Vz = V0z + az*dt
 		velocity.z += fullAcceleration.z * dt;
-
-		float x0 = coordinates.x;
-		float y0 = coordinates.y;
-		float z0 = coordinates.z;
 
 		//x = x0 + Vx*dt
 		coordinates.x += velocity.x * dt;
+		//y = y0 + Vy*dt
 		coordinates.y += velocity.y * dt;
+		//z = z0 + Vz*dt
 		coordinates.z += velocity.z * dt;
+
 		updateCoordinateData();
 		++trajectoryVertices;
-
-		distance += sqrt(pow(coordinates.x - x0, 2) + pow(coordinates.y - y0, 2) + pow(coordinates.z - z0, 2));
 	}
 
 	void drawTrajectory()
@@ -147,10 +150,12 @@ private:
 	std::string name;
 
 	float mass;
-	float distance;
 
 	glm::vec3 coordinates;
 	int trajectoryVertices;
+
+	float forceAbsValue;
+	float theta, ph;
 
 	glm::vec3 force;
 	glm::vec3 velocity;
