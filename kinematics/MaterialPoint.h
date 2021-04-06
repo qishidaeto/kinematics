@@ -12,6 +12,10 @@
 #define GLEW_STATIC
 #include <GLEW/glew.h>
 
+#include "Shader.h"
+#include "Camera.h"
+
+
 class MaterialPoint
 {
 public:
@@ -68,9 +72,17 @@ public:
 		++trajectoryVertices;
 	}
 
-	void drawTrajectory()
+	void drawTrajectory(Camera& camera, const GLuint& screenWidth, const GLuint& screenHeight)
 	{
 		updateBuffer();
+
+		Shader mp("mp.vertexShader", "mp.fragmentShader");
+
+		mp.Use();
+		mp.setMatrix4("model", glm::mat4(1.0f));
+		mp.setMatrix4("view", camera.GetViewMatrix());
+		mp.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 1000.0f));
+
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_LINE_STRIP, 0, trajectoryVertices * 3);
 		glBindVertexArray(0);

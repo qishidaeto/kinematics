@@ -10,6 +10,7 @@
 #include <GLFW/glfw3.h>
 
 // GLM
+#define GLM_FORCE_RADIANS
 #include <glm/vec3.hpp>
 
 // Std. Math
@@ -17,71 +18,19 @@
 #include <math.h>
 
 // Classes
-#include "MaterialPoint.h"
 #include "Shader.h"
 #include "Camera.h"
-
-struct coordinateSystem
-{
-	coordinateSystem()
-	{
-		GLfloat vertices[] =
-		{
-			 // Axis X
-			-10000.f, 0.0f, 0.0f,
-			 10000.f, 0.0f, 0.0f,
-
-			 // Axis Y
-			 0.0f, -10000.f, 0.0f,
-			 0.0f,  10000.f, 0.0f,
-
-			 // Axis Z
-			 0.0f, 0.0f, -10000.f,
-			 0.0f, 0.0f,  10000.f
-		};
-
-		glGenBuffers(1, &VBO);
-		glGenVertexArrays(1, &VAO);
-
-		glBindVertexArray(VAO);
-
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-		glEnableVertexAttribArray(0);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
-	}
-
-	void draw()
-	{
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_LINE_STRIP, 0, 2);
-		glDrawArrays(GL_LINE_STRIP, 2, 2);
-		glDrawArrays(GL_LINE_STRIP, 4, 2);
-		glBindVertexArray(0);
-	}
-
-	~coordinateSystem()
-	{
-		glDeleteVertexArrays(1, &VAO);
-		glDeleteBuffers(1, &VBO);
-	}
-
-	GLuint VAO, VBO;
-};
-
-const GLuint screenWidth = 1920, screenHeight = 1080;
+#include "MaterialPoint.h"
 
 // Callback-functions
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
+const GLuint screenWidth = 1920, screenHeight = 1080;
+
 // Camera
-Camera camera(glm::vec3(10.0f, 10.0f, 10.0f));
+Camera mainCamera;
 
 bool keys[1024];
 GLfloat lastX = screenWidth / 2.0f, lastY = screenHeight / 2.0f;
@@ -101,6 +50,68 @@ void selectObject();
 
 //Rendering
 GLfloat renderingDeltaTime = 0;
+
+struct coordinateSystem
+{
+	coordinateSystem()
+	{
+		GLfloat vertices[] =
+		{
+			// Axis X
+		   -10000.f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+			10000.f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+
+			// Axis Y
+			0.0f, -10000.f, 0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f,  10000.f, 0.0f, 0.0f, 1.0f, 0.0f,
+
+			// Axis Z
+			0.0f, 0.0f, -10000.f, 0.0f, 0.0f, 1.0f,
+			0.0f, 0.0f,  10000.f, 0.0f, 0.0f, 1.0f
+		};
+
+		glGenBuffers(1, &VBO);
+		glGenVertexArrays(1, &VAO);
+
+		glBindVertexArray(VAO);
+
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(0);
+
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+		glEnableVertexAttribArray(1);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+	}
+
+	void draw(Camera& camera, const GLuint& screenWidth, const GLuint& screenHeight)
+	{
+		Shader axesShader("axes.vertexShader", "axes.fragmentShader");
+
+		axesShader.Use();
+		axesShader.setMatrix4("model", glm::mat4(1.0f));
+		axesShader.setMatrix4("view", camera.GetViewMatrix());
+		axesShader.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 1000.0f));
+
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_LINE_STRIP, 0, 2);
+		glDrawArrays(GL_LINE_STRIP, 2, 2);
+		glDrawArrays(GL_LINE_STRIP, 4, 2);
+		glBindVertexArray(0);
+	}
+
+	~coordinateSystem()
+	{
+		glDeleteVertexArrays(1, &VAO);
+		glDeleteBuffers(1, &VBO);
+	}
+
+	GLuint VAO, VBO;
+};
 
 int main()
 {
@@ -127,15 +138,14 @@ int main()
 	glfwGetFramebufferSize(window, &width, &height);
 	glViewport(0, 0, width, height);
 
-	Shader shader("shader.vs", "shader.frag");
+
+
 	coordinateSystem XYZ;
+
 
 	glEnable(GL_LINE_SMOOTH);
 	glLineWidth(1.0f);
-
 	glEnable(GL_DEPTH_TEST);
-
-
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -152,16 +162,11 @@ int main()
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		shader.Use();
-		// Load transformation matrices into shader
-		shader.setMatrix4("model", glm::mat4(1.0f));
-		shader.setMatrix4("view", camera.GetViewMatrix());
-		shader.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 10000.0f));
 
-		XYZ.draw();
+		XYZ.draw(mainCamera, screenWidth, screenHeight);
 
 		for (int i = 0; i < objects.size(); ++i)
-			objects[i].drawTrajectory();
+			objects[i].drawTrajectory(mainCamera, screenWidth, screenHeight);
 
 		if (renderingDeltaTime >= 0.01)
 		{
@@ -233,13 +238,13 @@ void Do_Movement()
 {
 	// Camera controls
 	if (keys[GLFW_KEY_W])
-		camera.ProcessKeyboard(FORWARD, deltaTime);
+		mainCamera.ProcessKeyboard(FORWARD, deltaTime);
 	if (keys[GLFW_KEY_S])
-		camera.ProcessKeyboard(BACKWARD, deltaTime);
+		mainCamera.ProcessKeyboard(BACKWARD, deltaTime);
 	if (keys[GLFW_KEY_A])
-		camera.ProcessKeyboard(LEFT, deltaTime);
+		mainCamera.ProcessKeyboard(LEFT, deltaTime);
 	if (keys[GLFW_KEY_D])
-		camera.ProcessKeyboard(RIGHT, deltaTime);
+		mainCamera.ProcessKeyboard(RIGHT, deltaTime);
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
@@ -290,10 +295,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	lastX = xpos;
 	lastY = ypos;
 
-	camera.ProcessMouseMovement(xoffset, yoffset);
+	mainCamera.ProcessMouseMovement(xoffset, yoffset);
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	camera.ProcessMouseScroll(yoffset);
+	mainCamera.ProcessMouseScroll(yoffset);
 }
