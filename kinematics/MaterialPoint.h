@@ -122,25 +122,6 @@ public:
 	std::string getObjectName() { return name; }
 
 
-	void printObjectCoordinates()
-	{
-		std::string file = name + "_coordinates.txt";
-		std::ifstream input(file);
-
-		std::string line;
-
-		if (input.is_open())
-		{
-			while(std::getline(input, line))
-			std::cout << line << std::endl;
-		}
-		else std::cout << "file not opened";
-
-		input.close();
-	}
-
-
-
 private:
 	// Update-functions
 	void updateCoordinateData()

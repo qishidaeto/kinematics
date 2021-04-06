@@ -146,12 +146,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CoordinateSystem.h" />
     <ClInclude Include="MaterialPoint.h" />
     <ClInclude Include="Shader.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shader.frag" />
-    <None Include="shader.vs" />
+    <None Include="axes.fragmentShader" />
+    <None Include="axes.vertexShader" />
+    <None Include="mp.fragmentShader" />
+    <None Include="mp.vertexShader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -20,98 +20,35 @@
 // Classes
 #include "Shader.h"
 #include "Camera.h"
+#include "CoordinateSystem.h"
 #include "MaterialPoint.h"
 
 // Callback-functions
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+void mouseCallback(GLFWwindow* window, double xpos, double ypos);
 
+// Screen Resolution
 const GLuint screenWidth = 1920, screenHeight = 1080;
 
 // Camera
-Camera mainCamera;
+Camera mainCamera(glm::vec3(10.0f, 10.0f, 10.0f));
 
+// Controlling
 bool keys[1024];
+
 GLfloat lastX = screenWidth / 2.0f, lastY = screenHeight / 2.0f;
+
 bool firstMouse = true;
 
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
-void Do_Movement();
+void doCameraMovement();
 
 // Objects
-MaterialPoint* controlledObject;
 std::vector<MaterialPoint> objects;
 void createObject();
-void printObjectList();
-void selectObject();
-
-//Rendering
-GLfloat renderingDeltaTime = 0;
-
-struct coordinateSystem
-{
-	coordinateSystem()
-	{
-		GLfloat vertices[] =
-		{
-			// Axis X
-		   -10000.f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-			10000.f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-
-			// Axis Y
-			0.0f, -10000.f, 0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f,  10000.f, 0.0f, 0.0f, 1.0f, 0.0f,
-
-			// Axis Z
-			0.0f, 0.0f, -10000.f, 0.0f, 0.0f, 1.0f,
-			0.0f, 0.0f,  10000.f, 0.0f, 0.0f, 1.0f
-		};
-
-		glGenBuffers(1, &VBO);
-		glGenVertexArrays(1, &VAO);
-
-		glBindVertexArray(VAO);
-
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
-		glEnableVertexAttribArray(0);
-
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-		glEnableVertexAttribArray(1);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
-	}
-
-	void draw(Camera& camera, const GLuint& screenWidth, const GLuint& screenHeight)
-	{
-		Shader axesShader("axes.vertexShader", "axes.fragmentShader");
-
-		axesShader.Use();
-		axesShader.setMatrix4("model", glm::mat4(1.0f));
-		axesShader.setMatrix4("view", camera.GetViewMatrix());
-		axesShader.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 1000.0f));
-
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_LINE_STRIP, 0, 2);
-		glDrawArrays(GL_LINE_STRIP, 2, 2);
-		glDrawArrays(GL_LINE_STRIP, 4, 2);
-		glBindVertexArray(0);
-	}
-
-	~coordinateSystem()
-	{
-		glDeleteVertexArrays(1, &VAO);
-		glDeleteBuffers(1, &VBO);
-	}
-
-	GLuint VAO, VBO;
-};
 
 int main()
 {
@@ -124,9 +61,9 @@ int main()
 	GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "Kinematics", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 
-	glfwSetKeyCallback(window, key_callback);
-	glfwSetCursorPosCallback(window, mouse_callback);
-	glfwSetScrollCallback(window, scroll_callback);
+	glfwSetKeyCallback(window, keyCallback);
+	glfwSetCursorPosCallback(window, mouseCallback);
+	glfwSetScrollCallback(window, scrollCallback);
 
 	// Hide the cursor and hold it in the window
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -139,13 +76,14 @@ int main()
 	glViewport(0, 0, width, height);
 
 
-
-	coordinateSystem XYZ;
-
+	CoordinateSystem XYZ;
 
 	glEnable(GL_LINE_SMOOTH);
 	glLineWidth(1.0f);
 	glEnable(GL_DEPTH_TEST);
+
+	//Rendering
+	GLfloat renderingDeltaTime = 0;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -157,7 +95,7 @@ int main()
 		renderingDeltaTime += deltaTime;
 
 		glfwPollEvents();
-		Do_Movement();
+		doCameraMovement();
 
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -184,25 +122,6 @@ int main()
 	return 0;
 }
 
-void printObjectList()
-{
-	system("cls");
-
-	for (int i = 0; i < objects.size(); ++i)
-		std::cout << i + 1 << ". " << objects[i].getObjectName() << std::endl;
-}
-
-void selectObject()
-{
-	system("cls");
-
-	printObjectList();
-	std::cout << "Select object you want to control: ";
-	int object_num;
-	std::cin >> object_num;
-
-	controlledObject = &objects[object_num - 1];
-}
 
 void createObject()
 {
@@ -234,7 +153,7 @@ void createObject()
 	system("cls");
 }
 
-void Do_Movement()
+void doCameraMovement()
 {
 	// Camera controls
 	if (keys[GLFW_KEY_W])
@@ -247,7 +166,7 @@ void Do_Movement()
 		mainCamera.ProcessKeyboard(RIGHT, deltaTime);
 }
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
@@ -259,28 +178,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			keys[key] = false;
 	}
 
-	if (key == GLFW_KEY_N && action == GLFW_PRESS)
-		createObject();
-
-	if (key == GLFW_KEY_M && action == GLFW_PRESS)
-		printObjectList();
-
 	if (key == GLFW_KEY_C && action == GLFW_PRESS)
-		selectObject();
-
-	if (key == GLFW_KEY_B && action == GLFW_RELEASE)
-	{
-		objects[0].printObjectCoordinates();
-	}
-
-	if (key == GLFW_KEY_R && action == GLFW_RELEASE)
-	{
-		system("cls");
-		std::cout << renderingDeltaTime << std::endl;
-	}
+		createObject();
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+void mouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
 	if (firstMouse)
 	{
@@ -298,7 +200,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	mainCamera.ProcessMouseMovement(xoffset, yoffset);
 }
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	mainCamera.ProcessMouseScroll(yoffset);
 }

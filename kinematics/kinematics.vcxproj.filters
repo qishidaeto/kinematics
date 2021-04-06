@@ -16,6 +16,12 @@
     <Filter Include="Source Files\shaders">
       <UniqueIdentifier>{b326a96e-5b6b-4759-95c4-3b252e331240}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\shaders\axes">
+      <UniqueIdentifier>{15088dd3-6282-4849-8ab8-1db48400014d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\shaders\mp">
+      <UniqueIdentifier>{7b0a7932-0c73-419e-83d8-541d824278ae}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -32,13 +38,22 @@
     <ClInclude Include="Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CoordinateSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shader.vs">
-      <Filter>Source Files\shaders</Filter>
+    <None Include="axes.fragmentShader">
+      <Filter>Source Files\shaders\axes</Filter>
     </None>
-    <None Include="shader.frag">
-      <Filter>Source Files\shaders</Filter>
+    <None Include="axes.vertexShader">
+      <Filter>Source Files\shaders\axes</Filter>
+    </None>
+    <None Include="mp.vertexShader">
+      <Filter>Source Files\shaders\mp</Filter>
+    </None>
+    <None Include="mp.fragmentShader">
+      <Filter>Source Files\shaders\mp</Filter>
     </None>
   </ItemGroup>
 </Project>
