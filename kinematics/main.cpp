@@ -83,7 +83,7 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 
 	//Rendering
-	GLfloat renderingDeltaTime = 0;
+	GLfloat renderingDeltaTime = 0.0f;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -106,13 +106,16 @@ int main()
 		for (int i = 0; i < objects.size(); ++i)
 			objects[i].drawTrajectory(mainCamera, screenWidth, screenHeight);
 
-		if (renderingDeltaTime >= 0.01)
+		if (renderingDeltaTime >= 0.01f)
 		{
 			for (int i = 0; i < objects.size(); ++i)
 				objects[i].computeInstantCharachteristics(renderingDeltaTime);
 
-			renderingDeltaTime = 0;
+			renderingDeltaTime = 0.0f;
 		}
+
+		if (renderingDeltaTime >= 0.01f)
+			renderingDeltaTime = 0.0f;
 
 		glfwSwapBuffers(window);
 	}

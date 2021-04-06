@@ -28,11 +28,10 @@ public:
 		const glm::vec3& coordinates
 	) : name(name), mass(mass), forceAbsValue(forceAbsValue), theta(theta), ph(ph), coordinates(coordinates)
 	{
-		updateCoordinateData();
-		
-		velocity = { 0.0f, 0.0f, 0.0f };
-
 		trajectoryVertices = 0;
+		updateCoordinateData();
+
+		velocity = { 0.0f, 0.0f, 0.0f };
 
 		glGenBuffers(1, &VBO);
 		glGenVertexArrays(1, &VAO);
@@ -41,7 +40,7 @@ public:
 	void computeInstantCharachteristics(const float& dt)
 	{
 		// Fx = F * sin(theta) * cos(ph)
-		force.x = forceAbsValue * cos(glm::radians(theta)) * cos(glm::radians(ph));
+		force.x = forceAbsValue * sin(glm::radians(theta)) * cos(glm::radians(ph));
 		// Fy = F * sin(theta) * sin(ph)
 		force.y = forceAbsValue * sin(glm::radians(theta)) * sin(glm::radians(ph));
 		// Fz = F * cos(theta)
@@ -69,7 +68,6 @@ public:
 		coordinates.z += velocity.z * dt;
 
 		updateCoordinateData();
-		++trajectoryVertices;
 	}
 
 	void drawTrajectory(Camera& camera, const GLuint& screenWidth, const GLuint& screenHeight)
@@ -84,7 +82,7 @@ public:
 		mp.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 1000.0f));
 
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_LINE_STRIP, 0, trajectoryVertices * 3);
+		glDrawArrays(GL_LINE_STRIP, 0, trajectoryVertices);
 		glBindVertexArray(0);
 	}
 
@@ -95,7 +93,7 @@ public:
 
 		if (input.is_open())
 		{
-			const int arraySize = trajectoryVertices * 3;
+			const int arraySize = 3 * trajectoryVertices;
 
 			GLfloat* vertices = new GLfloat[arraySize];
 
@@ -116,24 +114,33 @@ public:
 			delete[] vertices;
 		}
 
-		else std::cout << "BUFFER::NOT_UPDATED";
+		else
+		{
+			std::cout << "BUFFER::NOT_UPDATED" << std::endl;
+		}
 	}
 
-	std::string getObjectName() { return name; }
-
+	std::string getObjectName() const
+	{ 
+		return name; 
+	}
 
 private:
-	// Update-functions
 	void updateCoordinateData()
 	{
 		std::string file = name + "_coordinates.txt";
 		std::ofstream output(file, std::ios::app);
 
 		if (output.is_open())
+		{
 			output << coordinates.x << ' ' << coordinates.y << ' ' << coordinates.z << std::endl;
+			++trajectoryVertices;
+		}
 
 		else
+		{
 			std::cout << "ERROR::FILE::IS::NOT_OPENED\n";
+		}
 
 		output.close();
 	}
