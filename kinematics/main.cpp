@@ -158,7 +158,7 @@ int main()
 		for (int i = 0; i < objects.size(); ++i)
 			objects[i].drawTrajectory();
 
-		if (renderingDeltaTime >= 0.005)
+		if (renderingDeltaTime >= 0.01)
 		{
 			for (int i = 0; i < objects.size(); ++i)
 				objects[i].computeInstantCharachteristics(renderingDeltaTime);
@@ -206,10 +206,11 @@ void createObject()
 	float mass;
 	std::cin >> mass;
 
-	std::cout << "Enter the radius-vector of the force of the object(x, y, z): ";
-	float Fx, Fy, Fz;
-	std::cin >> Fx >> Fy >> Fz;
-	glm::vec3 force = { Fx, Fy, Fz };
+	std::cout << "Enter the force abs value, theta(zenith) and ph(azimuth): ";
+	float forceAbsValue, theta, ph;
+	std::cin >> forceAbsValue;
+	std::cin >> theta;
+	std::cin >> ph;
 
 
 	std::cout << "Enter the starting position of the object(x, y, z): ";
@@ -217,7 +218,7 @@ void createObject()
 	std::cin >> x >> y >> z;
 	glm::vec3 coordinates = { x, y, z };
 
-	MaterialPoint object(name, mass, force, coordinates);
+	MaterialPoint object(name, mass, forceAbsValue, theta, ph, coordinates);
 	objects.push_back(object);
 
 	system("cls");
