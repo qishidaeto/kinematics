@@ -104,9 +104,9 @@ int main()
 		XYZ.draw(mainCamera, screenWidth, screenHeight);
 
 		for (int i = 0; i < objects.size(); ++i)
-			objects[i].drawTrajectory(mainCamera, screenWidth, screenHeight);
+			objects[i].drawObjectTrajectory(mainCamera, screenWidth, screenHeight);
 
-		if (renderingDeltaTime >= 0.01f)
+		if (renderingDeltaTime >= 3.0f)
 		{
 			for (int i = 0; i < objects.size(); ++i)
 				objects[i].computeInstantCharachteristics(renderingDeltaTime);
@@ -114,7 +114,7 @@ int main()
 			renderingDeltaTime = 0.0f;
 		}
 
-		if (renderingDeltaTime >= 0.01f)
+		if (renderingDeltaTime >= 3.0f)
 			renderingDeltaTime = 0.0f;
 
 		glfwSwapBuffers(window);

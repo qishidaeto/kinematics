@@ -2,7 +2,7 @@
 
 struct CoordinateSystem
 {
-	CoordinateSystem()
+	CoordinateSystem() : shader("axes.vertexShader", "axes.fragmentShader")
 	{
 		GLfloat vertices[] =
 		{
@@ -39,12 +39,10 @@ struct CoordinateSystem
 
 	void draw(Camera& camera, const GLuint& screenWidth, const GLuint& screenHeight)
 	{
-		Shader axesShader("axes.vertexShader", "axes.fragmentShader");
-
-		axesShader.Use();
-		axesShader.setMatrix4("model", glm::mat4(1.0f));
-		axesShader.setMatrix4("view", camera.GetViewMatrix());
-		axesShader.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 1000.0f));
+		shader.Use();
+		shader.setMatrix4("model", glm::mat4(1.0f));
+		shader.setMatrix4("view", camera.GetViewMatrix());
+		shader.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 1000.0f));
 
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_LINE_STRIP, 0, 2);
@@ -59,5 +57,6 @@ struct CoordinateSystem
 		glDeleteBuffers(1, &VBO);
 	}
 
+	Shader shader;
 	GLuint VAO, VBO;
 };
