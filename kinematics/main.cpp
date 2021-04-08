@@ -29,7 +29,7 @@ void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 void mouseCallback(GLFWwindow* window, double xpos, double ypos);
 
 // Screen Resolution
-const GLuint screenWidth = 1920, screenHeight = 1080;
+const GLuint screenWidth = 1366, screenHeight = 768;
 
 // Camera
 Camera mainCamera(glm::vec3(10.0f, 10.0f, 10.0f));
@@ -47,8 +47,14 @@ GLfloat lastFrame = 0.0f;
 void doCameraMovement();
 
 // Objects
+MaterialPoint* controlledObject;
 std::vector<MaterialPoint> objects;
 void createObject();
+void printObjectList();
+void doObjectMovement();
+
+void printControlledObjectCharachteristics();
+bool printControlledObjectData = false;
 
 int main()
 {
@@ -96,6 +102,10 @@ int main()
 
 		glfwPollEvents();
 		doCameraMovement();
+		doObjectMovement();
+
+		if (printControlledObjectData)
+		printControlledObjectCharachteristics();
 
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -104,9 +114,12 @@ int main()
 		XYZ.draw(mainCamera, screenWidth, screenHeight);
 
 		for (int i = 0; i < objects.size(); ++i)
+		{
 			objects[i].drawObjectTrajectory(mainCamera, screenWidth, screenHeight);
+			objects[i].drawObjectForceVector(mainCamera, screenWidth, screenHeight);
+		}
 
-		if (renderingDeltaTime >= 3.0f)
+		if (renderingDeltaTime >= 0.01f)
 		{
 			for (int i = 0; i < objects.size(); ++i)
 				objects[i].computeInstantCharachteristics(renderingDeltaTime);
@@ -114,7 +127,7 @@ int main()
 			renderingDeltaTime = 0.0f;
 		}
 
-		if (renderingDeltaTime >= 3.0f)
+		if (renderingDeltaTime >= 0.01f)
 			renderingDeltaTime = 0.0f;
 
 		glfwSwapBuffers(window);
@@ -125,6 +138,10 @@ int main()
 	return 0;
 }
 
+void printControlledObjectCharachteristics()
+{
+		(*controlledObject).printObjectCharachteristics();
+}
 
 void createObject()
 {
@@ -138,23 +155,59 @@ void createObject()
 	float mass;
 	std::cin >> mass;
 
-	std::cout << "Enter the force abs value, theta(zenith) and ph(azimuth): ";
-	float forceAbsValue, theta, ph;
-	std::cin >> forceAbsValue;
-	std::cin >> theta;
-	std::cin >> ph;
-
-
 	std::cout << "Enter the starting position of the object(x, y, z): ";
 	float x, y, z;
 	std::cin >> x >> y >> z;
 	glm::vec3 coordinates = { x, y, z };
 
-	MaterialPoint object(name, mass, forceAbsValue, theta, ph, coordinates);
+	MaterialPoint object(name, mass, coordinates);
 	objects.push_back(object);
+
+	controlledObject = &objects[objects.size() - 1];
 
 	system("cls");
 }
+
+void printObjectList()
+{
+	system("cls");
+
+	int i = 1;
+
+	for (const MaterialPoint& object : objects)
+		std::cout << i++ << '.' << object.getObjectName() << std::endl;
+}
+
+void selectControlledObject()
+{
+	printObjectList();
+
+		int objectNumber = 0;
+		std::cin >> objectNumber;
+
+		if (objectNumber > 0 && objectNumber <= objects.size())
+			controlledObject = &objects[objectNumber - 1];
+
+		system("cls");
+}
+
+void doObjectMovement()
+{
+	// Object controls
+	if (keys[GLFW_KEY_UP])
+		(*controlledObject).ProcessKeyboardObject(UP_OBJECT, deltaTime);
+	if (keys[GLFW_KEY_DOWN])
+		(*controlledObject).ProcessKeyboardObject(DOWN_OBJECT, deltaTime);
+	if (keys[GLFW_KEY_LEFT])
+		(*controlledObject).ProcessKeyboardObject(TURN_LEFT_OBECT, deltaTime);
+	if (keys[GLFW_KEY_RIGHT])
+		(*controlledObject).ProcessKeyboardObject(TURN_RIGHT_OBJECT, deltaTime);
+	if (keys[GLFW_KEY_E])
+		(*controlledObject).ProcessKeyboardObject(INCREASE_FORCE_OBJECT, deltaTime);
+	if (keys[GLFW_KEY_Q])
+		(*controlledObject).ProcessKeyboardObject(DECREASE_FORCE_OBJECT, deltaTime);
+}
+
 
 void doCameraMovement()
 {
@@ -183,6 +236,15 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
 
 	if (key == GLFW_KEY_C && action == GLFW_PRESS)
 		createObject();
+
+	if (key == GLFW_KEY_V && action == GLFW_PRESS)
+		selectControlledObject();
+
+	if (key == GLFW_KEY_B && action == GLFW_PRESS)
+		if (printControlledObjectData)
+			printControlledObjectData = false;
+		else printControlledObjectData = true;
+
 }
 
 void mouseCallback(GLFWwindow* window, double xpos, double ypos)
