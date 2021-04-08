@@ -102,4 +102,9 @@ public:
     {
         glUniformMatrix4fv(glGetUniformLocation(Program, name.c_str()), 1, GL_FALSE, glm::value_ptr(matrix));
     }
+
+    void setVector3(const std::string& name, const glm::vec3& vector)
+    {
+        glUniform3fv(glGetUniformLocation(Program, name.c_str()), 1, glm::value_ptr(vector));
+    }
 };
