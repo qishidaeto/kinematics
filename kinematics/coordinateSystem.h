@@ -42,7 +42,7 @@ struct CoordinateSystem
 		shader.Use();
 		shader.setMatrix4("model", glm::mat4(1.0f));
 		shader.setMatrix4("view", camera.GetViewMatrix());
-		shader.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 1000.0f));
+		shader.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 10000.0f));
 
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_LINE_STRIP, 0, 2);
