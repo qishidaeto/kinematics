@@ -29,7 +29,7 @@ void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 void mouseCallback(GLFWwindow* window, double xpos, double ypos);
 
 // Screen Resolution
-const GLuint screenWidth = 1366, screenHeight = 768;
+const GLuint screenWidth = 1920, screenHeight = 1080;
 
 // Camera
 Camera mainCamera(glm::vec3(10.0f, 10.0f, 10.0f));
@@ -55,6 +55,9 @@ void doObjectMovement();
 
 void printControlledObjectCharachteristics();
 bool printControlledObjectData = false;
+
+// Environment coefficient resistance 
+float ambientDensity = 0.0f;
 
 int main()
 {
@@ -110,19 +113,19 @@ int main()
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
 		XYZ.draw(mainCamera, screenWidth, screenHeight);
 
 		for (int i = 0; i < objects.size(); ++i)
 		{
 			objects[i].drawObjectTrajectory(mainCamera, screenWidth, screenHeight);
 			objects[i].drawObjectForceVector(mainCamera, screenWidth, screenHeight);
+			objects[i].drawObjectEnvironmentResistanceForceVector(mainCamera, screenWidth, screenHeight);
 		}
 
 		if (renderingDeltaTime >= 0.01f)
 		{
 			for (int i = 0; i < objects.size(); ++i)
-				objects[i].computeInstantCharachteristics(renderingDeltaTime);
+				objects[i].computeInstantCharachteristics(ambientDensity, renderingDeltaTime);
 
 			renderingDeltaTime = 0.0f;
 		}
@@ -244,6 +247,9 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
 		if (printControlledObjectData)
 			printControlledObjectData = false;
 		else printControlledObjectData = true;
+
+	if (key == GLFW_KEY_N && action == GLFW_PRESS)
+		std::cin >> ambientDensity;
 
 }
 

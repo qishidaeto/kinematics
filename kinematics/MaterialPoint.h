@@ -42,31 +42,34 @@ public:
         zenith = 0.0f;
         azimuth = 0.0f;
 
+        incidentFlowForce = { 0.0f, 0.0f, 0.0f };
+
         velocity = { 0.0f, 0.0f, 0.0f };
     }
    
     // Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
     void ProcessKeyboardObject(Object_Movement key, GLfloat deltaTime)
     {
-        GLfloat delta = 0.3f;
+        GLfloat deltaForce = 5.0f;
+        GLfloat deltaAngle = 1.0f;
 
         if (key == UP_OBJECT)
-                zenith += delta;
+                zenith += deltaAngle;
 
         if (key == DOWN_OBJECT)
-                zenith -= delta;
+                zenith -= deltaAngle;
 
         if (key == TURN_LEFT_OBECT)
-                azimuth -= delta;
+                azimuth -= deltaAngle;
 
         if (key == TURN_RIGHT_OBJECT)
-                azimuth += delta;
+                azimuth += deltaAngle;
 
         if (key == INCREASE_FORCE_OBJECT)
-            forceAbsValue += delta;
+            forceAbsValue += deltaForce;
 
         if (key == DECREASE_FORCE_OBJECT)
-            forceAbsValue -= delta;
+            forceAbsValue -= deltaForce;
     }
 
     void printObjectCharachteristics()
@@ -78,8 +81,15 @@ public:
         system("cls");
     }
 
-    void computeInstantCharachteristics(const float& dt)
+    void computeInstantCharachteristics(const float& ambientDensity, const float& dt)
     {
+        //Frx = q * Vx^2 / 2
+        incidentFlowForce.x = ambientDensity * velocity.x * velocity.x / 2;
+        //Fry = q * Vy^2 / 2
+        incidentFlowForce.y = ambientDensity * velocity.y * velocity.y / 2;
+        //Frz = q * Vz^2 / 2
+        incidentFlowForce.z = ambientDensity * velocity.z * velocity.z / 2;
+
         // Fx = F * sin(theta) * cos(ph)
         force.x = forceAbsValue * sin(glm::radians(zenith)) * cos(glm::radians(azimuth));
         // Fy = F * sin(theta) * sin(ph)
@@ -87,12 +97,12 @@ public:
         // Fz = F * cos(theta)
         force.z = forceAbsValue * cos(glm::radians(zenith));
 
-        // ax = Fx / m
-        fullAcceleration.x = force.x / mass;
-        // ay = Fy / m
-        fullAcceleration.y = force.y / mass;
-        // az = Fz / m
-        fullAcceleration.z = force.z / mass;
+        // ax = (Fx + Frx) / m
+        fullAcceleration.x = (force.x - incidentFlowForce.x) / mass;
+        // ay = (Fy + Fry) / m
+        fullAcceleration.y = (force.y - incidentFlowForce.y) / mass;
+        // az = (Fz + Frz) / m
+        fullAcceleration.z = (force.z - incidentFlowForce.z) / mass;
 
         //Vx = V0x + ax*dt
         velocity.x += fullAcceleration.x * dt;
@@ -135,7 +145,51 @@ public:
         glDeleteVertexArrays(1, &VAO);
         glDeleteBuffers(1, &VBO);
     }
+    void drawObjectEnvironmentResistanceForceVector(Camera& camera, const GLuint& screenWidth, const GLuint& screenHeight)
+    {
+        GLuint environmentResistanceForceVector_VAO;
+        GLuint environmentResistanceForceVector_VBO;
 
+        glGenBuffers(1, &environmentResistanceForceVector_VAO);
+        glGenVertexArrays(1, &environmentResistanceForceVector_VBO);
+
+        GLfloat* environmentResistanceForceVectorVertices = new GLfloat[6];
+
+        environmentResistanceForceVectorVertices[0] = coordinates.x;
+        environmentResistanceForceVectorVertices[1] = coordinates.y;
+        environmentResistanceForceVectorVertices[2] = coordinates.z;
+
+        environmentResistanceForceVectorVertices[3] = coordinates.x - incidentFlowForce.x;
+        environmentResistanceForceVectorVertices[4] = coordinates.y - incidentFlowForce.y;
+        environmentResistanceForceVectorVertices[5] = coordinates.z - incidentFlowForce.z;
+
+        glBindVertexArray(environmentResistanceForceVector_VAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, environmentResistanceForceVector_VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(environmentResistanceForceVectorVertices) * 6, environmentResistanceForceVectorVertices, GL_DYNAMIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+        glEnableVertexAttribArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+
+        delete[] environmentResistanceForceVectorVertices;
+
+        mp.Use();
+        mp.setMatrix4("model", glm::mat4(1.0f));
+        mp.setMatrix4("view", camera.GetViewMatrix());
+        mp.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 10000.0f));
+
+        mp.setVector3("verticeColor", glm::vec3(1.0f, 0.0f, 0.0f));
+
+        glBindVertexArray(environmentResistanceForceVector_VAO);
+        glDrawArrays(GL_LINE_STRIP, 0, 2);
+        glBindVertexArray(0);
+
+        glDeleteVertexArrays(1, &environmentResistanceForceVector_VAO);
+        glDeleteBuffers(1, &environmentResistanceForceVector_VBO);
+    }
     void drawObjectForceVector(Camera& camera, const GLuint& screenWidth, const GLuint& screenHeight)
     {
         GLuint forceVector_VAO;
@@ -181,6 +235,7 @@ public:
         glDeleteVertexArrays(1, &forceVector_VAO);
         glDeleteBuffers(1, &forceVector_VBO);
     }
+
 
     void updateTrajectroyCoordinatesBuffer(const GLuint& VAO, const GLuint& VBO)
     {
@@ -233,6 +288,8 @@ private:
     glm::vec3 coordinates;
 
     glm::vec3 force;
+    glm::vec3 incidentFlowForce;
+
     glm::vec3 velocity;
     glm::vec3 fullAcceleration;
 
