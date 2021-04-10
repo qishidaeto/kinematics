@@ -14,10 +14,13 @@
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
-    FORWARD,
-    BACKWARD,
-    LEFT,
-    RIGHT
+    FORWARD_CAMERA,
+    BACKWARD_CAMERA,
+    LEFT_CAMERA,
+    RIGHT_CAMERA,
+
+    INCREASE_CAMERA_VELOCITY,
+    DECREASE_CAMERA_VELOCITY
 };
 
 // Default camera values
@@ -73,17 +76,22 @@ public:
     }
 
     // Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-    void ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime)
+    void ProcessKeyboard(Camera_Movement key, GLfloat deltaTime)
     {
         GLfloat velocity = this->MovementSpeed * deltaTime;
-        if (direction == FORWARD)
+        if (key == FORWARD_CAMERA)
             this->Position += this->Front * velocity;
-        if (direction == BACKWARD)
+        if (key == BACKWARD_CAMERA)
             this->Position -= this->Front * velocity;
-        if (direction == LEFT)
+        if (key == LEFT_CAMERA)
             this->Position -= this->Right * velocity;
-        if (direction == RIGHT)
+        if (key == RIGHT_CAMERA)
             this->Position += this->Right * velocity;
+
+        if (key == INCREASE_CAMERA_VELOCITY)
+            this->MovementSpeed += 3.0f;
+        if (key == DECREASE_CAMERA_VELOCITY)
+            this->MovementSpeed -= 3.0f;
     }
 
     // Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -118,7 +126,7 @@ public:
         if (this->Zoom >= 45.0f)
             this->Zoom = 45.0f;
     }
-
+    
 private:
     // Calculates the front vector from the Camera's (updated) Eular Angles
     void updateCameraVectors()

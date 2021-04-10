@@ -211,18 +211,22 @@ void doObjectMovement()
 		(*controlledObject).ProcessKeyboardObject(DECREASE_FORCE_OBJECT, deltaTime);
 }
 
-
 void doCameraMovement()
 {
 	// Camera controls
 	if (keys[GLFW_KEY_W])
-		mainCamera.ProcessKeyboard(FORWARD, deltaTime);
+		mainCamera.ProcessKeyboard(FORWARD_CAMERA, deltaTime);
 	if (keys[GLFW_KEY_S])
-		mainCamera.ProcessKeyboard(BACKWARD, deltaTime);
+		mainCamera.ProcessKeyboard(BACKWARD_CAMERA, deltaTime);
 	if (keys[GLFW_KEY_A])
-		mainCamera.ProcessKeyboard(LEFT, deltaTime);
+		mainCamera.ProcessKeyboard(LEFT_CAMERA, deltaTime);
 	if (keys[GLFW_KEY_D])
-		mainCamera.ProcessKeyboard(RIGHT, deltaTime);
+		mainCamera.ProcessKeyboard(RIGHT_CAMERA, deltaTime);
+
+	if (keys[GLFW_KEY_LEFT_BRACKET])
+		mainCamera.ProcessKeyboard(INCREASE_CAMERA_VELOCITY, deltaTime);
+	if (keys[GLFW_KEY_RIGHT_BRACKET])
+		mainCamera.ProcessKeyboard(DECREASE_CAMERA_VELOCITY, deltaTime);
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
