@@ -92,18 +92,19 @@ public:
         glDeleteShader(fragment);
 
     }
+
     // Uses the current shader
-    void Use()
+    void Use() const
     {
         glUseProgram(this->Program);
     }
 
-    void setMatrix4(const std::string& name, const glm::mat4& matrix)
+    void setMatrix4(const std::string& name, const glm::mat4& matrix) const
     {
         glUniformMatrix4fv(glGetUniformLocation(Program, name.c_str()), 1, GL_FALSE, glm::value_ptr(matrix));
     }
 
-    void setVector3(const std::string& name, const glm::vec3& vector)
+    void setVector3(const std::string& name, const glm::vec3& vector) const
     {
         glUniform3fv(glGetUniformLocation(Program, name.c_str()), 1, glm::value_ptr(vector));
     }

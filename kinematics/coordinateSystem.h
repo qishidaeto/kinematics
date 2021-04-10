@@ -2,21 +2,21 @@
 
 struct CoordinateSystem
 {
-	CoordinateSystem() : shader("axes.vertexShader", "axes.fragmentShader")
+	CoordinateSystem()
 	{
 		GLfloat vertices[] =
 		{
 			// Axis X
-		   -10000.f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-			10000.f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+		   -1000000.f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+			1000000.f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
 
 			// Axis Y
-			0.0f, -10000.f, 0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f,  10000.f, 0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, -1000000.f, 0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f,  1000000.f, 0.0f, 0.0f, 1.0f, 0.0f,
 
 			// Axis Z
-			0.0f, 0.0f, -10000.f, 0.0f, 0.0f, 1.0f,
-			0.0f, 0.0f,  10000.f, 0.0f, 0.0f, 1.0f
+			0.0f, 0.0f, -1000000.f, 0.0f, 0.0f, 1.0f,
+			0.0f, 0.0f,  1000000.f, 0.0f, 0.0f, 1.0f
 		};
 
 		glGenBuffers(1, &VBO);
@@ -37,16 +37,16 @@ struct CoordinateSystem
 		glBindVertexArray(0);
 	}
 
-	void draw(Camera& camera, const GLuint& screenWidth, const GLuint& screenHeight)
+	void draw(const Shader& shader)
 	{
-		shader.Use();
-		shader.setMatrix4("model", glm::mat4(1.0f));
-		shader.setMatrix4("view", camera.GetViewMatrix());
-		shader.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 10000.0f));
-
 		glBindVertexArray(VAO);
+		shader.setVector3("color", glm::vec3(1.0f, 0.0f, 0.0f));
 		glDrawArrays(GL_LINE_STRIP, 0, 2);
+
+		shader.setVector3("color", glm::vec3(0.0f, 1.0f, 0.0f));
 		glDrawArrays(GL_LINE_STRIP, 2, 2);
+
+		shader.setVector3("color", glm::vec3(0.0f, 0.0f, 1.0f));
 		glDrawArrays(GL_LINE_STRIP, 4, 2);
 		glBindVertexArray(0);
 	}
@@ -57,6 +57,5 @@ struct CoordinateSystem
 		glDeleteBuffers(1, &VBO);
 	}
 
-	Shader shader;
 	GLuint VAO, VBO;
 };

@@ -59,6 +59,8 @@ bool printControlledObjectData = false;
 // Environment coefficient resistance 
 float ambientDensity = 0.0f;
 
+
+
 int main()
 {
 	glfwInit();
@@ -84,7 +86,10 @@ int main()
 	glfwGetFramebufferSize(window, &width, &height);
 	glViewport(0, 0, width, height);
 
+	// Shader
+	Shader mainShader("main.vertexShader", "main.fragmentShader");
 
+	// Coordinate System
 	CoordinateSystem XYZ;
 
 	glEnable(GL_LINE_SMOOTH);
@@ -103,23 +108,33 @@ int main()
 
 		renderingDeltaTime += deltaTime;
 
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		glfwPollEvents();
+
 		doCameraMovement();
 		doObjectMovement();
+
+
 
 		if (printControlledObjectData)
 		printControlledObjectCharachteristics();
 
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		XYZ.draw(mainCamera, screenWidth, screenHeight);
+
+		mainShader.Use();
+		mainShader.setMatrix4("model", glm::mat4(1.0f));
+		mainShader.setMatrix4("view", mainCamera.GetViewMatrix());
+		mainShader.setMatrix4("projection", glm::perspective(mainCamera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 10000.0f));
+
+		XYZ.draw(mainShader);
 
 		for (int i = 0; i < objects.size(); ++i)
 		{
-			objects[i].drawObjectTrajectory(mainCamera, screenWidth, screenHeight);
-			objects[i].drawObjectForceVector(mainCamera, screenWidth, screenHeight);
-			objects[i].drawObjectEnvironmentResistanceForceVector(mainCamera, screenWidth, screenHeight);
+			objects[i].drawTrajectory(mainShader);
+			objects[i].drawDevelopedForceVector(mainShader);
+			objects[i].drawIncidentFlowForceVector(mainShader);
 		}
 
 		if (renderingDeltaTime >= 0.01f)

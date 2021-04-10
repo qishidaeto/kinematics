@@ -34,11 +34,11 @@ public:
         std::string name,
         const float& mass,
         const glm::vec3& coordinates
-    ) : name(name), mass(mass), coordinates(coordinates), mp("mp.vertexShader", "mp.fragmentShader")
+    ) : name(name), mass(mass), coordinates(coordinates)
     {
         updateTrajectoryCoordinates(coordinates);
 
-        force = { 0.0f, 0.0f, 0.0f };
+        developedForce = { 0.0f, 0.0f, 0.0f };
         zenith = 0.0f;
         azimuth = 0.0f;
 
@@ -91,18 +91,18 @@ public:
         incidentFlowForce.z = ambientDensity * velocity.z * velocity.z / 2;
 
         // Fx = F * sin(theta) * cos(ph)
-        force.x = forceAbsValue * sin(glm::radians(zenith)) * cos(glm::radians(azimuth));
+        developedForce.x = forceAbsValue * sin(glm::radians(zenith)) * cos(glm::radians(azimuth));
         // Fy = F * sin(theta) * sin(ph)
-        force.y = forceAbsValue * sin(glm::radians(zenith)) * sin(glm::radians(azimuth));
+        developedForce.y = forceAbsValue * sin(glm::radians(zenith)) * sin(glm::radians(azimuth));
         // Fz = F * cos(theta)
-        force.z = forceAbsValue * cos(glm::radians(zenith));
+        developedForce.z = forceAbsValue * cos(glm::radians(zenith));
 
         // ax = (Fx + Frx) / m
-        fullAcceleration.x = (force.x - incidentFlowForce.x) / mass;
+        fullAcceleration.x = (developedForce.x - incidentFlowForce.x) / mass;
         // ay = (Fy + Fry) / m
-        fullAcceleration.y = (force.y - incidentFlowForce.y) / mass;
+        fullAcceleration.y = (developedForce.y - incidentFlowForce.y) / mass;
         // az = (Fz + Frz) / m
-        fullAcceleration.z = (force.z - incidentFlowForce.z) / mass;
+        fullAcceleration.z = (developedForce.z - incidentFlowForce.z) / mass;
 
         //Vx = V0x + ax*dt
         velocity.x += fullAcceleration.x * dt;
@@ -121,7 +121,7 @@ public:
         updateTrajectoryCoordinates(coordinates);
     }
 
-    void drawObjectTrajectory(Camera& camera, const GLuint& screenWidth, const GLuint& screenHeight)
+    void drawTrajectory(const Shader& shader)
     {
         GLuint VAO;
         GLuint VBO;
@@ -131,12 +131,7 @@ public:
 
         updateTrajectroyCoordinatesBuffer(VAO, VBO);
 
-        mp.Use();
-        mp.setMatrix4("model", glm::mat4(1.0f));
-        mp.setMatrix4("view", camera.GetViewMatrix());
-        mp.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 10000.0f));
-
-        mp.setVector3("verticeColor", glm::vec3(1.0f, 1.0f, 0.0f));
+        shader.setVector3("color", glm::vec3(1.0f, 1.0f, 0.0f));
 
         glBindVertexArray(VAO);
         glDrawArrays(GL_LINE_STRIP, 0, trajectoryCoordinates.size() / 3);
@@ -145,99 +140,62 @@ public:
         glDeleteVertexArrays(1, &VAO);
         glDeleteBuffers(1, &VBO);
     }
-    void drawObjectEnvironmentResistanceForceVector(Camera& camera, const GLuint& screenWidth, const GLuint& screenHeight)
+    void drawIncidentFlowForceVector(const Shader& shader)
     {
-        GLuint environmentResistanceForceVector_VAO;
-        GLuint environmentResistanceForceVector_VBO;
+        GLuint VAO;
+        GLuint VBO;
 
-        glGenBuffers(1, &environmentResistanceForceVector_VAO);
-        glGenVertexArrays(1, &environmentResistanceForceVector_VBO);
+        glGenBuffers(1, &VAO);
+        glGenVertexArrays(1, &VBO);
+        updateForceCoordinatesBuffer(VAO, VBO, -incidentFlowForce);
 
-        GLfloat* environmentResistanceForceVectorVertices = new GLfloat[6];
+        shader.setVector3("color", glm::vec3(0.545f, 0.0f, 0.545f));
 
-        environmentResistanceForceVectorVertices[0] = coordinates.x;
-        environmentResistanceForceVectorVertices[1] = coordinates.y;
-        environmentResistanceForceVectorVertices[2] = coordinates.z;
-
-        environmentResistanceForceVectorVertices[3] = coordinates.x - incidentFlowForce.x;
-        environmentResistanceForceVectorVertices[4] = coordinates.y - incidentFlowForce.y;
-        environmentResistanceForceVectorVertices[5] = coordinates.z - incidentFlowForce.z;
-
-        glBindVertexArray(environmentResistanceForceVector_VAO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, environmentResistanceForceVector_VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(environmentResistanceForceVectorVertices) * 6, environmentResistanceForceVectorVertices, GL_DYNAMIC_DRAW);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-        glEnableVertexAttribArray(0);
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-
-        delete[] environmentResistanceForceVectorVertices;
-
-        mp.Use();
-        mp.setMatrix4("model", glm::mat4(1.0f));
-        mp.setMatrix4("view", camera.GetViewMatrix());
-        mp.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 10000.0f));
-
-        mp.setVector3("verticeColor", glm::vec3(1.0f, 0.0f, 0.0f));
-
-        glBindVertexArray(environmentResistanceForceVector_VAO);
+        glBindVertexArray(VAO);
         glDrawArrays(GL_LINE_STRIP, 0, 2);
         glBindVertexArray(0);
 
-        glDeleteVertexArrays(1, &environmentResistanceForceVector_VAO);
-        glDeleteBuffers(1, &environmentResistanceForceVector_VBO);
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
     }
-    void drawObjectForceVector(Camera& camera, const GLuint& screenWidth, const GLuint& screenHeight)
+    void drawDevelopedForceVector(const Shader& shader)
     {
-        GLuint forceVector_VAO;
-        GLuint forceVector_VBO;
+        GLuint VAO;
+        GLuint VBO;
 
-        glGenBuffers(1, &forceVector_VAO);
-        glGenVertexArrays(1, &forceVector_VBO);
+        glGenBuffers(1, &VAO);
+        glGenVertexArrays(1, &VBO);
+        updateForceCoordinatesBuffer(VAO, VBO, developedForce);
 
-        GLfloat* forceVectorVertices = new GLfloat[6];
+        shader.setVector3("color", glm::vec3(0.0f, 0.392f, 0.0f));
 
-        forceVectorVertices[0] = coordinates.x;
-        forceVectorVertices[1] = coordinates.y;
-        forceVectorVertices[2] = coordinates.z;
-
-        forceVectorVertices[3] = coordinates.x + force.x;
-        forceVectorVertices[4] = coordinates.y + force.y;
-        forceVectorVertices[5] = coordinates.z + force.z;
-
-        glBindVertexArray(forceVector_VAO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, forceVector_VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(forceVectorVertices) * 6, forceVectorVertices, GL_DYNAMIC_DRAW);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-        glEnableVertexAttribArray(0);
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-
-        delete[] forceVectorVertices;
-
-        mp.Use();
-        mp.setMatrix4("model", glm::mat4(1.0f));
-        mp.setMatrix4("view", camera.GetViewMatrix());
-        mp.setMatrix4("projection", glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 10000.0f));
-
-        mp.setVector3("verticeColor", glm::vec3(0.0f, 1.0f, 1.0f));
-
-        glBindVertexArray(forceVector_VAO);
+        glBindVertexArray(VAO);
         glDrawArrays(GL_LINE_STRIP, 0, 2);
         glBindVertexArray(0);
 
-        glDeleteVertexArrays(1, &forceVector_VAO);
-        glDeleteBuffers(1, &forceVector_VBO);
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
     }
 
 
-    void updateTrajectroyCoordinatesBuffer(const GLuint& VAO, const GLuint& VBO)
+    std::string getObjectName() const
+    {
+        return name;
+    }
+
+    ~MaterialPoint()
+    {
+
+    }
+
+private:
+    void updateTrajectoryCoordinates(const glm::vec3& coordinates)
+    {
+        trajectoryCoordinates.push_back(coordinates.x);
+        trajectoryCoordinates.push_back(coordinates.y);
+        trajectoryCoordinates.push_back(coordinates.z);
+    }
+    void updateTrajectroyCoordinatesBuffer(const GLuint& VAO, const GLuint& VBO) const
     {
         GLfloat* vertices = new GLfloat[trajectoryCoordinates.size()];
 
@@ -257,25 +215,31 @@ public:
 
         delete[] vertices;
     }
-
-    std::string getObjectName() const
+    void updateForceCoordinatesBuffer(const GLuint& VAO, const GLuint& VBO, const glm::vec3& force) const
     {
-        return name;
+        GLfloat* forceVectorVertices = new GLfloat[6];
+
+        forceVectorVertices[0] = coordinates.x;
+        forceVectorVertices[1] = coordinates.y;
+        forceVectorVertices[2] = coordinates.z;
+
+        forceVectorVertices[3] = coordinates.x + force.x;
+        forceVectorVertices[4] = coordinates.y + force.y;
+        forceVectorVertices[5] = coordinates.z + force.z;
+
+        glBindVertexArray(VAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(forceVectorVertices) * 6, forceVectorVertices, GL_DYNAMIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+        glEnableVertexAttribArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+
+        delete[] forceVectorVertices;
     }
-
-    ~MaterialPoint()
-    {
-
-    }
-
-private:
-    void updateTrajectoryCoordinates(const glm::vec3& coordinates)
-    {
-        trajectoryCoordinates.push_back(coordinates.x);
-        trajectoryCoordinates.push_back(coordinates.y);
-        trajectoryCoordinates.push_back(coordinates.z);
-    }
-
 
 private:
     std::string name;
@@ -287,12 +251,9 @@ private:
     std::vector<GLfloat> trajectoryCoordinates;
     glm::vec3 coordinates;
 
-    glm::vec3 force;
+    glm::vec3 developedForce;
     glm::vec3 incidentFlowForce;
 
     glm::vec3 velocity;
     glm::vec3 fullAcceleration;
-
-    Shader mp;
-
 };
