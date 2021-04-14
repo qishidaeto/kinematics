@@ -213,17 +213,17 @@ void doObjectMovement()
 {
 	// Object controls
 	if (keys[GLFW_KEY_UP])
-		(*controlledObject).ProcessKeyboardObject(UP_OBJECT, deltaTime);
+		(*controlledObject).ProcessKeyboardObject(RAISE_DEVELOPED_FORCE_VECTOR, deltaTime);
 	if (keys[GLFW_KEY_DOWN])
-		(*controlledObject).ProcessKeyboardObject(DOWN_OBJECT, deltaTime);
+		(*controlledObject).ProcessKeyboardObject(LOWER_DEVELOPED_FORCE_VECTOR, deltaTime);
 	if (keys[GLFW_KEY_LEFT])
-		(*controlledObject).ProcessKeyboardObject(TURN_LEFT_OBECT, deltaTime);
+		(*controlledObject).ProcessKeyboardObject(TURN_LEFT_DEVELOPED_FORCE_VECTOR, deltaTime);
 	if (keys[GLFW_KEY_RIGHT])
-		(*controlledObject).ProcessKeyboardObject(TURN_RIGHT_OBJECT, deltaTime);
+		(*controlledObject).ProcessKeyboardObject(TURN_RIGHT_DEVELOPED_FORCE_VECTOR, deltaTime);
 	if (keys[GLFW_KEY_E])
-		(*controlledObject).ProcessKeyboardObject(INCREASE_FORCE_OBJECT, deltaTime);
+		(*controlledObject).ProcessKeyboardObject(INCREASE_DEVELOPED_FORCE_VECTOR, deltaTime);
 	if (keys[GLFW_KEY_Q])
-		(*controlledObject).ProcessKeyboardObject(DECREASE_FORCE_OBJECT, deltaTime);
+		(*controlledObject).ProcessKeyboardObject(DECREASE_DEVELOPED_FORCE_VECTOR, deltaTime);
 }
 
 void doCameraMovement()
