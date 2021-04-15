@@ -12,6 +12,7 @@
 // GLM
 #define GLM_FORCE_RADIANS
 #include <glm/vec3.hpp>
+#include <glm/gtc/constants.hpp>
 
 // Std. Math
 #define _USE_MATH_DEFINES
@@ -51,6 +52,7 @@ MaterialPoint* controlledObject = nullptr;
 std::vector<MaterialPoint> objects;
 void createObject();
 void printObjectList();
+void printObjectShapes();
 void doObjectMovement();
 bool isObjectCreated(const std::string& name);
 
@@ -158,6 +160,21 @@ void printControlledObjectCharachteristics()
 		(*controlledObject).printObjectCharachteristics();
 }
 
+void printObjectShapes()
+{
+	std::cout << "\t\t Object Shapes: \n\n";
+
+	std::cout << "1) Sphere (Cf = 0.47)\n";
+	std::cout << "2) Half-sphere (Cf = 0.42)\n";
+	std::cout << "3) Cone (Cf = 0.50)\n";
+	std::cout << "4) Cube (Cf = 1.05)\n";
+	std::cout << "5) Angled cube (Cf = 0.80)\n";
+	std::cout << "6) Long cylinder (Cf = 0.82)\n";
+	std::cout << "7) Short cylinder (Cf = 1.15)\n";
+	std::cout << "8) Streamlined body (Cf = 0.04)\n";
+	std::cout << "9) Stramlined half-body (Cf = 0.09)\n\n";
+}
+
 bool isObjectCreated(const std::string& name)
 {
 	for (const MaterialPoint& object : objects)
@@ -179,7 +196,6 @@ void createObject()
 	{
 		std::cout << "Enter the object name: ";
 		std::cin >> name;
-
 		system("cls");
 
 	} while (isObjectCreated(name));
@@ -187,20 +203,39 @@ void createObject()
 	float mass = 0;
 	do
 	{
-		std::cout << "Enter the mass of the object (m > 0): ";
+		std::cout << "Enter the mass of the object(m > 0): ";
 		std::cin >> mass;
-
 		system("cls");
 
 	} while (mass <= 0);
 
 	std::cout << "Enter the starting position of the object(x, y, z): ";
+
 	float x, y, z;
 	std::cin >> x >> y >> z;
 	glm::vec3 coordinates = { x, y, z };
 	system("cls");
 
-	MaterialPoint object(name, mass, coordinates);
+	float dragCoefficient = 0.0f;
+	do
+	{
+		printObjectShapes();
+		std::cout << "Enter the drag coefficient of the object(Cf > 0): ";
+		std::cin >> dragCoefficient;
+		system("cls");
+
+	} while (mass <= 0); 
+
+	float midsection = 0.0f;
+	do
+	{
+		std::cout << "Enter the midsection of the object(S > 0): ";
+		std::cin >> midsection;
+		system("cls");
+
+	} while (midsection <= 0);
+
+	MaterialPoint object(name, mass, coordinates, dragCoefficient, midsection);
 	objects.push_back(object);
 
 	controlledObject = &objects[objects.size() - 1];

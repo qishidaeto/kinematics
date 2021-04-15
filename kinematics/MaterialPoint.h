@@ -33,8 +33,10 @@ public:
 	MaterialPoint(
 		std::string name,
 		const float& mass,
-		const glm::vec3& coordinates
-	) : name(name), mass(mass), coordinates(coordinates)
+		const glm::vec3& coordinates,
+		const float& dragCoefficient,
+		const float& midsection
+	) : name(name), mass(mass), coordinates(coordinates), dragCoefficient(dragCoefficient), midsection(midsection)
 	{
 		updateTrajectoryCoordinates(coordinates);
 
@@ -42,7 +44,7 @@ public:
 		theta = 0.0f;
 		ph = 0.0f;
 
-		incidentFlowForce = { 0.0f, 0.0f, 0.0f };
+		dragForce = { 0.0f, 0.0f, 0.0f };
 		gravitationalForce = { 0.0f, 0.0f, 0.0f };
 
 		velocity = { 0.0f, 0.0f, 0.0f };
@@ -93,12 +95,12 @@ public:
 			if (object.getObjectName() != getObjectName())
 				gravitationalForce += gravitationalConstant * object.mass * mass / glm::length(object.coordinates - coordinates) * glm::normalize(object.coordinates - coordinates);
 
-		//Frx = q * Vx^2 / 2
-		incidentFlowForce.x = ambientDensity * velocity.x * velocity.x / 2;
-		//Fry = q * Vy^2 / 2
-		incidentFlowForce.y = ambientDensity * velocity.y * velocity.y / 2;
-		//Frz = q * Vz^2 / 2
-		incidentFlowForce.z = ambientDensity * velocity.z * velocity.z / 2;
+		//Frx = Cf * q * Vx^2 / 2 * S
+		dragForce.x = dragCoefficient * ambientDensity * velocity.x * velocity.x / 2 * midsection;
+		//Fry = Cf * q * Vy^2 / 2 * S
+		dragForce.y = dragCoefficient * ambientDensity * velocity.y * velocity.y / 2 * midsection;
+		//Frz = Cf * q * Vz^2 / 2 * S
+		dragForce.z = dragCoefficient * ambientDensity * velocity.z * velocity.z / 2 * midsection;
 
 		// Fx = F * cos(theta) * sin(ph)
 		developedForce.x = forceAbsValue * cos(glm::radians(theta)) * sin(glm::radians(ph));
@@ -107,12 +109,12 @@ public:
 		// Fz = F * cos(theta) * cos(ph)
 		developedForce.z = forceAbsValue * cos(glm::radians(theta)) * cos(glm::radians(ph));
 
-		// ax = (Fx - Frx + Fgx) / m
-		fullAcceleration.x = (developedForce.x - incidentFlowForce.x + gravitationalForce.x) / mass;
-		// ay = (Fy - Fry + Fgy) / m
-		fullAcceleration.y = (developedForce.y - incidentFlowForce.y + gravitationalForce.y) / mass;
-		// az = (Fz - Frz + Fgz) / m
-		fullAcceleration.z = (developedForce.z - incidentFlowForce.z + gravitationalForce.z) / mass;
+		// ax = (Fx - Fdx + Fgx) / m
+		fullAcceleration.x = (developedForce.x - dragForce.x + gravitationalForce.x) / mass;
+		// ay = (Fy - Fdy + Fgy) / m
+		fullAcceleration.y = (developedForce.y - dragForce.y + gravitationalForce.y) / mass;
+		// az = (Fz - Fdz + Fgz) / m
+		fullAcceleration.z = (developedForce.z - dragForce.z + gravitationalForce.z) / mass;
 
 		//Vx = V0x + ax*dt
 		velocity.x += fullAcceleration.x * dt;
@@ -157,7 +159,7 @@ public:
 
 		glGenBuffers(1, &VAO);
 		glGenVertexArrays(1, &VBO);
-		updateForceCoordinatesBuffer(VAO, VBO, -incidentFlowForce);
+		updateForceCoordinatesBuffer(VAO, VBO, -dragForce);
 
 		shader.setVector3("color", glm::vec3(0.545f, 0.0f, 0.545f));
 
@@ -276,6 +278,8 @@ private:
 private:
 	std::string name;
 	float mass;
+	float dragCoefficient;
+	float midsection;
 
 	float forceAbsValue;
 	float theta, ph;
@@ -284,7 +288,7 @@ private:
 	glm::vec3 coordinates;
 
 	glm::vec3 developedForce;
-	glm::vec3 incidentFlowForce;
+	glm::vec3 dragForce;
 	glm::vec3 gravitationalForce;
 
 	glm::vec3 velocity;
