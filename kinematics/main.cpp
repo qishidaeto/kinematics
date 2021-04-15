@@ -47,18 +47,18 @@ GLfloat lastFrame = 0.0f;
 void doCameraMovement();
 
 // Objects
-MaterialPoint* controlledObject;
+MaterialPoint* controlledObject = nullptr;
 std::vector<MaterialPoint> objects;
 void createObject();
 void printObjectList();
 void doObjectMovement();
+bool isObjectCreated(const std::string& name);
 
 void printControlledObjectCharachteristics();
 bool printControlledObjectData = false;
 
-// Environment coefficient resistance 
+// Ambient density (for calculation of environment coefficient resistance)
 float ambientDensity = 0.0f;
-
 
 
 int main()
@@ -116,9 +116,6 @@ int main()
 		doCameraMovement();
 		doObjectMovement();
 
-		if (printControlledObjectData)
-		printControlledObjectCharachteristics();
-
 		mainShader.Use();
 		mainShader.setMatrix4("model", glm::mat4(1.0f));
 		mainShader.setMatrix4("view", mainCamera.GetViewMatrix());
@@ -133,6 +130,9 @@ int main()
 			objects[i].drawIncidentFlowForceVector(mainShader);
 			objects[i].drawGravitationalForceVector(mainShader);
 		}
+
+		if (printControlledObjectData)
+			printControlledObjectCharachteristics();
 
 		if (renderingDeltaTime >= 0.10f)
 			renderingDeltaTime = 0.0f;
@@ -158,29 +158,54 @@ void printControlledObjectCharachteristics()
 		(*controlledObject).printObjectCharachteristics();
 }
 
+bool isObjectCreated(const std::string& name)
+{
+	for (const MaterialPoint& object : objects)
+		if (object.getObjectName() == name)
+		{
+			std::cout << "This object name can't be used, because it's already created." << std::endl;
+			return true;
+		}
+
+	return false;
+}
+
 void createObject()
 {
 	system("cls");
 
-	std::cout << "Enter the object name: ";
-	std::string name;
-	std::cin >> name;
+	std::string name = "";
+	do
+	{
+		std::cout << "Enter the object name: ";
+		std::cin >> name;
 
-	std::cout << "Enter the mass of the object: ";
-	float mass;
-	std::cin >> mass;
+		system("cls");
+
+	} while (isObjectCreated(name));
+
+	float mass = 0;
+	do
+	{
+		std::cout << "Enter the mass of the object (m > 0): ";
+		std::cin >> mass;
+
+		system("cls");
+
+	} while (mass <= 0);
 
 	std::cout << "Enter the starting position of the object(x, y, z): ";
 	float x, y, z;
 	std::cin >> x >> y >> z;
 	glm::vec3 coordinates = { x, y, z };
+	system("cls");
 
 	MaterialPoint object(name, mass, coordinates);
 	objects.push_back(object);
 
 	controlledObject = &objects[objects.size() - 1];
 
-	system("cls");
+
 }
 
 void printObjectList()
@@ -195,37 +220,46 @@ void printObjectList()
 
 void selectControlledObject()
 {
-	printObjectList();
-
+	if (objects.size() != 0)
+	{
 		int objectNumber = 0;
-		std::cin >> objectNumber;
 
-		if (objectNumber > 0 && objectNumber <= objects.size())
-			controlledObject = &objects[objectNumber - 1];
+		do
+		{
+			printObjectList();
+			std::cin >> objectNumber;
+
+		} while (objectNumber <= 0 || objectNumber > objects.size());
+
+		controlledObject = &objects[objectNumber - 1];
 
 		system("cls");
+	}
 }
 
+// Object controls
 void doObjectMovement()
 {
-	// Object controls
-	if (keys[GLFW_KEY_UP])
-		(*controlledObject).ProcessKeyboardObject(RAISE_DEVELOPED_FORCE_VECTOR, deltaTime);
-	if (keys[GLFW_KEY_DOWN])
-		(*controlledObject).ProcessKeyboardObject(LOWER_DEVELOPED_FORCE_VECTOR, deltaTime);
-	if (keys[GLFW_KEY_LEFT])
-		(*controlledObject).ProcessKeyboardObject(TURN_LEFT_DEVELOPED_FORCE_VECTOR, deltaTime);
-	if (keys[GLFW_KEY_RIGHT])
-		(*controlledObject).ProcessKeyboardObject(TURN_RIGHT_DEVELOPED_FORCE_VECTOR, deltaTime);
-	if (keys[GLFW_KEY_E])
-		(*controlledObject).ProcessKeyboardObject(INCREASE_DEVELOPED_FORCE_VECTOR, deltaTime);
-	if (keys[GLFW_KEY_Q])
-		(*controlledObject).ProcessKeyboardObject(DECREASE_DEVELOPED_FORCE_VECTOR, deltaTime);
+	if (controlledObject != nullptr)
+	{
+		if (keys[GLFW_KEY_UP])
+			(*controlledObject).ProcessKeyboardObject(RAISE_DEVELOPED_FORCE_VECTOR, deltaTime);
+		if (keys[GLFW_KEY_DOWN])
+			(*controlledObject).ProcessKeyboardObject(LOWER_DEVELOPED_FORCE_VECTOR, deltaTime);
+		if (keys[GLFW_KEY_LEFT])
+			(*controlledObject).ProcessKeyboardObject(TURN_LEFT_DEVELOPED_FORCE_VECTOR, deltaTime);
+		if (keys[GLFW_KEY_RIGHT])
+			(*controlledObject).ProcessKeyboardObject(TURN_RIGHT_DEVELOPED_FORCE_VECTOR, deltaTime);
+		if (keys[GLFW_KEY_E])
+			(*controlledObject).ProcessKeyboardObject(INCREASE_DEVELOPED_FORCE_VECTOR, deltaTime);
+		if (keys[GLFW_KEY_Q])
+			(*controlledObject).ProcessKeyboardObject(DECREASE_DEVELOPED_FORCE_VECTOR, deltaTime);
+	}
 }
 
+// Camera controls
 void doCameraMovement()
 {
-	// Camera controls
 	if (keys[GLFW_KEY_W])
 		mainCamera.ProcessKeyboard(FORWARD_CAMERA, deltaTime);
 	if (keys[GLFW_KEY_S])
@@ -246,25 +280,21 @@ void doCameraMovement()
 		mainCamera.ProcessKeyboard(DECREASE_CAMERA_VELOCITY, deltaTime);
 
 	if (keys[GLFW_KEY_X] && keys[GLFW_KEY_0])
-		mainCamera.SetCameraPoisition(glm::vec3(5.0f, 5.0f, 5.0f), 45.0f, 45.0f);
+		mainCamera.SetCameraPoisition(glm::vec3(5.0f, 5.0f, 5.0f));
 
-	if (keys[GLFW_KEY_X] && keys[GLFW_KEY_O])
-	{
-		glm::vec3 coordinates = (*controlledObject).getObjectCoordinates();
-		coordinates.x += 20.0f;
-		coordinates.y += 20.0f;
-
-		const float yaw = (*controlledObject).getObjectTheta();
-		const float pitch = (*controlledObject).getObjectPh();
-
-		mainCamera.SetCameraPoisition(coordinates, yaw, pitch);
-	}
+	if (keys[GLFW_KEY_F])
+		if (controlledObject != nullptr)
+		{
+			glm::vec3 coordinates = (*controlledObject).getObjectCoordinates();
+			mainCamera.SetCameraPoisition(glm::vec3(coordinates.x, coordinates.y, coordinates.z));
+		}
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
+
 	if (key >= 0 && key < 1024)
 	{
 		if (action == GLFW_PRESS)
@@ -285,8 +315,13 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
 		else printControlledObjectData = true;
 
 	if (key == GLFW_KEY_N && action == GLFW_PRESS)
-		std::cin >> ambientDensity;
+	{
 
+		std::cout << "Enter ambient Density (q >= 0): ";
+		std::cin >> ambientDensity;
+		
+		system("cls");
+	}
 }
 
 void mouseCallback(GLFWwindow* window, double xpos, double ypos)

@@ -92,14 +92,14 @@ public:
             this->Position += this->Right * velocity;
 
         if (key == RAISE_CAMERA)
-            this->Position.y -= this->Front.y * velocity;
+            this->Position.y += fabs(this->Front.y * velocity);
         if (key == LOWER_CAMERA)
-            this->Position.y += this->Front.y * velocity;
+            this->Position.y -= fabs(this->Front.y * velocity);
 
         if (key == INCREASE_CAMERA_VELOCITY)
-            this->MovementSpeed += 3.0f;
-        if (key == DECREASE_CAMERA_VELOCITY)
             this->MovementSpeed -= 3.0f;
+        if (key == DECREASE_CAMERA_VELOCITY)
+            this->MovementSpeed += 3.0f;
     }
 
     // Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -135,12 +135,9 @@ public:
             this->Zoom = 45.0f;
     }
     
-    void SetCameraPoisition(const glm::vec3& coordinates, const float& newYaw, const float& newPitch)
+    void SetCameraPoisition(const glm::vec3& coordinates)
     {
         Position = coordinates;
-        Yaw = newYaw;
-        Pitch = newPitch;
-
     }
 
 private:

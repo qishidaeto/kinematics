@@ -51,7 +51,7 @@ public:
 	// Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
 	void ProcessKeyboardObject(forceVector key, GLfloat deltaTime)
 	{
-		GLfloat deltaForce = 3.0f;
+		GLfloat deltaForce = 1.0f;
 		GLfloat deltaAngle = 1.0f;
 
 		if (key == RAISE_DEVELOPED_FORCE_VECTOR)
@@ -213,16 +213,6 @@ public:
 	glm::vec3 getObjectCoordinates() const
 	{
 		return coordinates;
-	}
-
-	float getObjectTheta() const
-	{
-		return theta;
-	}
-
-	float getObjectPh() const
-	{
-		return ph;
 	}
 
 	~MaterialPoint()
