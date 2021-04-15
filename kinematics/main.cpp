@@ -116,12 +116,8 @@ int main()
 		doCameraMovement();
 		doObjectMovement();
 
-
-
 		if (printControlledObjectData)
 		printControlledObjectCharachteristics();
-
-
 
 		mainShader.Use();
 		mainShader.setMatrix4("model", glm::mat4(1.0f));
@@ -138,6 +134,9 @@ int main()
 			objects[i].drawGravitationalForceVector(mainShader);
 		}
 
+		if (renderingDeltaTime >= 0.10f)
+			renderingDeltaTime = 0.0f;
+
 		if (renderingDeltaTime >= 0.01f)
 		{
 			for (int i = 0; i < objects.size(); ++i)
@@ -145,9 +144,6 @@ int main()
 
 			renderingDeltaTime = 0.0f;
 		}
-
-		if (renderingDeltaTime >= 0.01f)
-			renderingDeltaTime = 0.0f;
 
 		glfwSwapBuffers(window);
 	}
