@@ -126,7 +126,7 @@ int main()
 		mainShader.Use();
 		mainShader.setMatrix4("model", glm::mat4(1.0f));
 		mainShader.setMatrix4("view", mainCamera.GetViewMatrix());
-		mainShader.setMatrix4("projection", glm::perspective(mainCamera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 10000.0f));
+		mainShader.setMatrix4("projection", glm::perspective(mainCamera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 1000000.0f));
 
 		XYZ.draw(mainShader);
 
@@ -238,10 +238,30 @@ void doCameraMovement()
 	if (keys[GLFW_KEY_D])
 		mainCamera.ProcessKeyboard(RIGHT_CAMERA, deltaTime);
 
+	if (keys[GLFW_KEY_SPACE])
+		mainCamera.ProcessKeyboard(RAISE_CAMERA, deltaTime);
+	if (keys[GLFW_KEY_LEFT_SHIFT])
+		mainCamera.ProcessKeyboard(LOWER_CAMERA, deltaTime);
+
 	if (keys[GLFW_KEY_LEFT_BRACKET])
 		mainCamera.ProcessKeyboard(INCREASE_CAMERA_VELOCITY, deltaTime);
 	if (keys[GLFW_KEY_RIGHT_BRACKET])
 		mainCamera.ProcessKeyboard(DECREASE_CAMERA_VELOCITY, deltaTime);
+
+	if (keys[GLFW_KEY_X] && keys[GLFW_KEY_0])
+		mainCamera.SetCameraPoisition(glm::vec3(5.0f, 5.0f, 5.0f), 45.0f, 45.0f);
+
+	if (keys[GLFW_KEY_X] && keys[GLFW_KEY_O])
+	{
+		glm::vec3 coordinates = (*controlledObject).getObjectCoordinates();
+		coordinates.x += 20.0f;
+		coordinates.y += 20.0f;
+
+		const float yaw = (*controlledObject).getObjectTheta();
+		const float pitch = (*controlledObject).getObjectPh();
+
+		mainCamera.SetCameraPoisition(coordinates, yaw, pitch);
+	}
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)

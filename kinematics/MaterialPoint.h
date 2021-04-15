@@ -55,19 +55,15 @@ public:
 
 		if (key == RAISE_DEVELOPED_FORCE_VECTOR)
 			theta += deltaAngle;
-
 		if (key == LOWER_DEVELOPED_FORCE_VECTOR)
 			theta -= deltaAngle;
-
 		if (key == TURN_LEFT_DEVELOPED_FORCE_VECTOR)
 			ph += deltaAngle;
-
 		if (key == TURN_RIGHT_DEVELOPED_FORCE_VECTOR)
 			ph -= deltaAngle;
 
 		if (key == INCREASE_DEVELOPED_FORCE_VECTOR)
 			forceAbsValue += deltaForce;
-
 		if (key == DECREASE_DEVELOPED_FORCE_VECTOR)
 		{
 			forceAbsValue -= deltaForce;
@@ -186,6 +182,21 @@ public:
 	std::string getObjectName() const
 	{
 		return name;
+	}
+
+	glm::vec3 getObjectCoordinates() const
+	{
+		return coordinates;
+	}
+
+	float getObjectTheta() const
+	{
+		return theta;
+	}
+
+	float getObjectPh() const
+	{
+		return ph;
 	}
 
 	~MaterialPoint()

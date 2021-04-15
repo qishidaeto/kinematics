@@ -19,8 +19,11 @@ enum Camera_Movement {
     LEFT_CAMERA,
     RIGHT_CAMERA,
 
+    RAISE_CAMERA,
+    LOWER_CAMERA,
+
     INCREASE_CAMERA_VELOCITY,
-    DECREASE_CAMERA_VELOCITY
+    DECREASE_CAMERA_VELOCITY,
 };
 
 // Default camera values
@@ -88,6 +91,11 @@ public:
         if (key == RIGHT_CAMERA)
             this->Position += this->Right * velocity;
 
+        if (key == RAISE_CAMERA)
+            this->Position.y -= this->Front.y * velocity;
+        if (key == LOWER_CAMERA)
+            this->Position.y += this->Front.y * velocity;
+
         if (key == INCREASE_CAMERA_VELOCITY)
             this->MovementSpeed += 3.0f;
         if (key == DECREASE_CAMERA_VELOCITY)
@@ -127,6 +135,14 @@ public:
             this->Zoom = 45.0f;
     }
     
+    void SetCameraPoisition(const glm::vec3& coordinates, const float& newYaw, const float& newPitch)
+    {
+        Position = coordinates;
+        Yaw = newYaw;
+        Pitch = newPitch;
+
+    }
+
 private:
     // Calculates the front vector from the Camera's (updated) Eular Angles
     void updateCameraVectors()
