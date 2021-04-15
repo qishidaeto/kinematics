@@ -43,6 +43,7 @@ public:
 		ph = 0.0f;
 
 		incidentFlowForce = { 0.0f, 0.0f, 0.0f };
+		gravitationalForce = { 0.0f, 0.0f, 0.0f };
 
 		velocity = { 0.0f, 0.0f, 0.0f };
 	}
@@ -82,8 +83,16 @@ public:
 		system("cls");
 	}
 
-	void computeInstantCharachteristics(const float& ambientDensity, const float& dt)
+	void computeInstantCharachteristics(const std::vector<MaterialPoint> objects, const float& ambientDensity, const float& dt)
 	{
+		gravitationalForce = { 0.0f, 0.0f, 0.0f };
+
+		const float gravitationalConstant = 6.6743e-11;
+
+		for (const MaterialPoint& object : objects)
+			if (object.getObjectName() != getObjectName())
+				gravitationalForce += gravitationalConstant * object.mass * mass / glm::length(object.coordinates - coordinates) * glm::normalize(object.coordinates - coordinates);
+
 		//Frx = q * Vx^2 / 2
 		incidentFlowForce.x = ambientDensity * velocity.x * velocity.x / 2;
 		//Fry = q * Vy^2 / 2
@@ -98,12 +107,12 @@ public:
 		// Fz = F * cos(theta) * cos(ph)
 		developedForce.z = forceAbsValue * cos(glm::radians(theta)) * cos(glm::radians(ph));
 
-		// ax = (Fx + Frx) / m
-		fullAcceleration.x = (developedForce.x - incidentFlowForce.x) / mass;
-		// ay = (Fy + Fry) / m
-		fullAcceleration.y = (developedForce.y - incidentFlowForce.y) / mass;
-		// az = (Fz + Frz) / m
-		fullAcceleration.z = (developedForce.z - incidentFlowForce.z) / mass;
+		// ax = (Fx - Frx + Fgx) / m
+		fullAcceleration.x = (developedForce.x - incidentFlowForce.x + gravitationalForce.x) / mass;
+		// ay = (Fy - Fry + Fgy) / m
+		fullAcceleration.y = (developedForce.y - incidentFlowForce.y + gravitationalForce.y) / mass;
+		// az = (Fz - Frz + Fgz) / m
+		fullAcceleration.z = (developedForce.z - incidentFlowForce.z + gravitationalForce.z) / mass;
 
 		//Vx = V0x + ax*dt
 		velocity.x += fullAcceleration.x * dt;
@@ -177,7 +186,24 @@ public:
 		glDeleteVertexArrays(1, &VAO);
 		glDeleteBuffers(1, &VBO);
 	}
+	void drawGravitationalForceVector(const Shader& shader)
+	{
+		GLuint VAO;
+		GLuint VBO;
 
+		glGenBuffers(1, &VAO);
+		glGenVertexArrays(1, &VBO);
+		updateForceCoordinatesBuffer(VAO, VBO, gravitationalForce);
+
+		shader.setVector3("color", glm::vec3(0.416f, 0.353f, 0.804f));
+
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_LINE_STRIP, 0, 2);
+		glBindVertexArray(0);
+
+		glDeleteVertexArrays(1, &VAO);
+		glDeleteBuffers(1, &VBO);
+	}
 
 	std::string getObjectName() const
 	{
@@ -269,6 +295,7 @@ private:
 
 	glm::vec3 developedForce;
 	glm::vec3 incidentFlowForce;
+	glm::vec3 gravitationalForce;
 
 	glm::vec3 velocity;
 	glm::vec3 fullAcceleration;

@@ -135,12 +135,13 @@ int main()
 			objects[i].drawTrajectory(mainShader);
 			objects[i].drawDevelopedForceVector(mainShader);
 			objects[i].drawIncidentFlowForceVector(mainShader);
+			objects[i].drawGravitationalForceVector(mainShader);
 		}
 
 		if (renderingDeltaTime >= 0.01f)
 		{
 			for (int i = 0; i < objects.size(); ++i)
-				objects[i].computeInstantCharachteristics(ambientDensity, renderingDeltaTime);
+				objects[i].computeInstantCharachteristics(objects, ambientDensity, renderingDeltaTime);
 
 			renderingDeltaTime = 0.0f;
 		}
