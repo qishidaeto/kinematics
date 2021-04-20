@@ -29,10 +29,28 @@
 #include "CoordinateSystem.h"
 #include "MaterialPoint.h"
 
+
+// Object forms
+#define FLAT_PLATE_FORM                          1
+#define SPHERE_FORM                              2
+#define ROUNDED_HEMISHPERE_FORM                  3
+#define FLAT_HEMISPHERE_FORM                     4
+#define HORIZONTAL_ELLIPSOID_FORM                5
+#define CUBE_FORM                                6
+
+// Drag coefficients
+#define FLAT_PLATE_DRAG_COEFFICIENT              1.17f
+#define SPHERE_DRAG_COEFFICIENT                  0.47f
+#define ROUNDED_HEMISHPERE_DRAG_COEFFICIENT      0.42f
+#define FLAT_HEMISPHERE_DRAG_COEFFICIENT         1.17f
+#define VERTICAL_ELLIPSOID_DRAG_COEFFICIENT      0.59f
+#define CUBE_DRAG_COEFFICIENT                    2.05f
+
 // Callback-functions
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 void mouseCallback(GLFWwindow* window, double xpos, double ypos);
+void voidCallBackFunction(GLFWwindow* window, double xpos, double ypos) {}
 
 // Screen resolution
 const GLuint screenWidth = 1920, screenHeight = 1080;
@@ -47,6 +65,7 @@ GLfloat lastX = screenWidth / 2.0f, lastY = screenHeight / 2.0f;
 bool firstMouse = true;
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
+bool showCursor = false;
 
 // Objects
 MaterialPoint* controlledObject = nullptr;
@@ -56,6 +75,9 @@ void doObjectMovement();
 // Ambient density (for calculation of environment coefficient resistance)
 float ambientDensity = 0.0f;
 
+// GUI Menu
+bool menuCreateObject = false;
+void displayGUImenu();
 
 int WinMain()
 {
@@ -72,7 +94,6 @@ int WinMain()
 	glfwSetCursorPosCallback(window, mouseCallback);
 	glfwSetScrollCallback(window, scrollCallback);
 
-	// Hide the cursor and hold it in the window
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	glewExperimental = GL_TRUE;
@@ -102,7 +123,7 @@ int WinMain()
 	CoordinateSystem XYZ;
 
 	glEnable(GL_LINE_SMOOTH);
-	glLineWidth(1.0f);
+	glLineWidth(2.0f);
 	glEnable(GL_DEPTH_TEST);
 
 	//Rendering
@@ -124,6 +145,8 @@ int WinMain()
 
 		doCameraMovement();
 		doObjectMovement();
+
+		displayGUImenu();
 
 		mainShader.Use();
 		mainShader.setMatrix4("model", glm::mat4(1.0f));
@@ -157,6 +180,98 @@ int WinMain()
 	glfwTerminate();
 
 	return 0;
+}
+
+void displayGUImenu()
+{
+	// Start the Dear ImGui frame
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+
+	if (ImGui::BeginMainMenuBar())
+	{
+		if (ImGui::BeginMenu("Menu"))
+		{
+			if (ImGui::MenuItem("Create Object"))
+				menuCreateObject = true;
+
+			ImGui::EndMenu();
+		}
+
+		if (menuCreateObject)
+		{
+			ImGui::SetNextWindowPos({ screenWidth - 315.0f, 30.0f });
+			ImGui::SetNextWindowSize({ 250.0f, 400.0f });
+
+			ImGui::Begin("Object creating", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+
+			static char nameBuffer[16];
+			ImGui::InputText("Name", nameBuffer, IM_ARRAYSIZE(nameBuffer), ImGuiInputTextFlags_None | ImGuiInputTextFlags_CharsNoBlank);
+
+			static float mass = 0.1f;
+			ImGui::InputFloat("Mass", &mass, 0.1f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsScientific);
+
+			if (mass <= 0.0f)
+			{
+				ImGui::PushStyleColor(NULL, { 1.0f, 0.0f, 0.0f, 1.0f });
+				ImGui::Text("Incorrect object mass");
+				ImGui::PopStyleColor();
+			}
+
+			static GLfloat x = 0.0f;
+			ImGui::InputFloat("X", &x, 0.1f, 0.1f, "%.3f");
+
+			static GLfloat y = 0.0f;
+			ImGui::InputFloat("Y", &y, 0.1f, 0.1f, "%.3f");
+
+			static GLfloat z = 0.0f;
+			ImGui::InputFloat("Z", &z, 0.1f, 0.1f, "%.3f");
+
+			ImGui::Text("Object form (Cf):");
+			static int objectForm = 0;
+
+			ImGui::RadioButton("Flat plate", &objectForm, FLAT_PLATE_FORM);
+			ImGui::RadioButton("Sphere", &objectForm, SPHERE_FORM);
+			ImGui::RadioButton("Rounded hemisphere", &objectForm, ROUNDED_HEMISHPERE_FORM);
+			ImGui::RadioButton("Flat hemisphere", &objectForm, FLAT_HEMISPHERE_FORM);
+			ImGui::RadioButton("Horizontal ellipsoid", &objectForm, HORIZONTAL_ELLIPSOID_FORM);
+			ImGui::RadioButton("Cube", &objectForm, CUBE_FORM);
+
+			ImGui::Text("Midsection:");
+
+			static GLfloat midsection = 0.0f;
+			ImGui::InputFloat("S", &midsection, 0.1f, 0.1f, "%.3f");
+
+			if (ImGui::Button("Create"))
+			{
+				float dragCoefficient = 0.0f;
+
+				if (objectForm == FLAT_PLATE_FORM) dragCoefficient = FLAT_PLATE_DRAG_COEFFICIENT;
+				if (objectForm == SPHERE_FORM) dragCoefficient = SPHERE_DRAG_COEFFICIENT;
+				if (objectForm == ROUNDED_HEMISHPERE_FORM) dragCoefficient = ROUNDED_HEMISHPERE_DRAG_COEFFICIENT;
+				if (objectForm == FLAT_HEMISPHERE_FORM) dragCoefficient = FLAT_HEMISPHERE_DRAG_COEFFICIENT;
+				if (objectForm == HORIZONTAL_ELLIPSOID_FORM) dragCoefficient = VERTICAL_ELLIPSOID_DRAG_COEFFICIENT;
+				if (objectForm == CUBE_FORM) dragCoefficient = CUBE_DRAG_COEFFICIENT;
+
+				objects.push_back({ nameBuffer, mass, {x, y, z}, dragCoefficient, midsection });
+				controlledObject = &objects[objects.size() - 1];
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Cancel"))
+				menuCreateObject = false;
+
+			ImGui::End();
+		}
+
+		ImGui::EndMainMenuBar();
+	}
+
+	// Rendering
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 // Object controls
@@ -216,6 +331,23 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
+
+	if (key == GLFW_KEY_LEFT_CONTROL && action == GLFW_PRESS)
+	{
+		if (!showCursor)
+		{
+			showCursor = true;
+			glfwSetCursorPosCallback(window, voidCallBackFunction);
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		}
+
+		else
+		{
+			showCursor = false;
+			glfwSetCursorPosCallback(window, mouseCallback);
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		}
+	}
 
 	if (key >= 0 && key < 1024)
 	{
