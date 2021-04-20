@@ -35,6 +35,8 @@ public:
 		updateTrajectoryCoordinates(coordinates);
 
 		developedForce = { 0.0f, 0.0f, 0.0f };
+
+		forceAbsValue = 0.0f;
 		theta = 0.0f;
 		ph = 0.0f;
 
@@ -74,7 +76,7 @@ public:
 	{
 		gravitationalForce = { 0.0f, 0.0f, 0.0f };
 
-		const float gravitationalConstant = 6.6743e-11;
+		const float gravitationalConstant = 6.6743e-11f;
 
 		for (const MaterialPoint& object : objects)
 			if (object.getObjectName() != getObjectName())
@@ -119,14 +121,23 @@ public:
 	}
 
 	void drawTrajectory(const Shader& shader)
-	{
+	{	
 		GLuint VAO;
 		GLuint VBO;
 
-		glGenBuffers(1, &VAO);
-		glGenVertexArrays(1, &VBO);
+		glGenVertexArrays(1, &VAO);
+		glGenBuffers(1, &VBO);
+		
+		glBindVertexArray(VAO);
 
-		updateTrajectroyCoordinatesBuffer(VAO, VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * trajectoryCoordinates.size(), &trajectoryCoordinates[0], GL_DYNAMIC_DRAW);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
 
 		shader.setVector3("color", glm::vec3(1.0f, 1.0f, 0.0f));
 
@@ -134,16 +145,17 @@ public:
 		glDrawArrays(GL_LINE_STRIP, 0, trajectoryCoordinates.size() / 3);
 		glBindVertexArray(0);
 
-		glDeleteVertexArrays(1, &VAO);
 		glDeleteBuffers(1, &VBO);
+		glDeleteVertexArrays(1, &VAO);
 	}
+
 	void drawIncidentFlowForceVector(const Shader& shader)
 	{
 		GLuint VAO;
 		GLuint VBO;
 
-		glGenBuffers(1, &VAO);
-		glGenVertexArrays(1, &VBO);
+		glGenVertexArrays(1, &VAO);
+		glGenBuffers(1, &VBO);
 		updateForceCoordinatesBuffer(VAO, VBO, -dragForce);
 
 		shader.setVector3("color", glm::vec3(0.545f, 0.0f, 0.545f));
@@ -160,8 +172,8 @@ public:
 		GLuint VAO;
 		GLuint VBO;
 
-		glGenBuffers(1, &VAO);
-		glGenVertexArrays(1, &VBO);
+		glGenVertexArrays(1, &VAO);
+		glGenBuffers(1, &VBO);
 		updateForceCoordinatesBuffer(VAO, VBO, developedForce);
 
 		shader.setVector3("color", glm::vec3(0.0f, 0.392f, 0.0f));
@@ -178,8 +190,8 @@ public:
 		GLuint VAO;
 		GLuint VBO;
 
-		glGenBuffers(1, &VAO);
-		glGenVertexArrays(1, &VBO);
+		glGenVertexArrays(1, &VAO);
+		glGenBuffers(1, &VBO);
 		updateForceCoordinatesBuffer(VAO, VBO, gravitationalForce);
 
 		shader.setVector3("color", glm::vec3(0.416f, 0.353f, 0.804f));
@@ -196,7 +208,6 @@ public:
 	{
 		return name;
 	}
-
 	glm::vec3 getObjectCoordinates() const
 	{
 		return coordinates;
@@ -214,26 +225,7 @@ private:
 		trajectoryCoordinates.push_back(coordinates.y);
 		trajectoryCoordinates.push_back(coordinates.z);
 	}
-	void updateTrajectroyCoordinatesBuffer(const GLuint& VAO, const GLuint& VBO) const
-	{
-		GLfloat* vertices = new GLfloat[trajectoryCoordinates.size()];
 
-		for (int i = 0; i < trajectoryCoordinates.size(); ++i)
-			vertices[i] = trajectoryCoordinates[i];
-
-		glBindVertexArray(VAO);
-
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices) * trajectoryCoordinates.size(), vertices, GL_DYNAMIC_DRAW);
-
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-		glEnableVertexAttribArray(0);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
-
-		delete[] vertices;
-	}
 	void updateForceCoordinatesBuffer(const GLuint& VAO, const GLuint& VBO, const glm::vec3& force) const
 	{
 		GLfloat* forceVectorVertices = new GLfloat[6];
@@ -261,6 +253,10 @@ private:
 	}
 
 private:
+
+
+
+
 	std::string name;
 	float mass;
 	float dragCoefficient;
