@@ -1,18 +1,12 @@
 #pragma once
 
-#include <vector>
+// GLEW
+#include <GL/glew.h>
 
-//GLM
+// GLM
 #define GLM_FORCE_RADIANS
-#include <glm/vec3.hpp>
-#include <glm/trigonometric.hpp>
-
-#include <fstream>
-#include <iostream>
-#include <string>
-
-#define GLEW_STATIC
-#include <GLEW/glew.h>
+#include <glm/glm/vec3.hpp>
+#include <glm/glm/trigonometric.hpp>
 
 #include "Shader.h"
 #include "Camera.h"
@@ -74,15 +68,6 @@ public:
 			if (forceAbsValue <= 0.0f)
 				forceAbsValue = 0.0f;
 		}
-	}
-
-	void printObjectCharachteristics()
-	{
-		std::cout << "\t\t Object name: " << name << std::endl;
-		std::cout << "forceAbsValue = " << forceAbsValue << std::endl;
-		std::cout << "Zenith = " << theta << ", " << "azimuth = " << ph;
-
-		system("cls");
 	}
 
 	void computeInstantCharachteristics(const std::vector<MaterialPoint> objects, const float& ambientDensity, const float& dt)

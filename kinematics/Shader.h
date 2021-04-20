@@ -1,16 +1,14 @@
 #pragma once
-#include <GLEW/glew.h>
+#include <GL/glew.h>
 
-#include <string>
 #include <fstream>
 #include <sstream>
-#include <iostream>
 
-#include<glm/mat4x4.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include<glm/glm/mat4x4.hpp>
+#include <glm/glm/gtc/type_ptr.hpp>
 
-#include<glm/mat4x4.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <glm/glm/mat4x4.hpp>
+#include <glm/glm/gtc/type_ptr.hpp>
 
 class Shader
 {
