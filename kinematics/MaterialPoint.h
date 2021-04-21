@@ -32,12 +32,13 @@ class MaterialPoint
 {
 public:
 	MaterialPoint(
-		std::string name,
+		const std::string& name,
+		const std::string& form,
 		const float& mass,
-		const glm::vec3& coordinates,
 		const float& dragCoefficient,
-		const float& midsection
-	) : name(name), mass(mass), coordinates(coordinates), dragCoefficient(dragCoefficient), midsection(midsection)
+		const float& midsection,
+		const glm::vec3& coordinates
+	) : name(name), mass(mass), coordinates(coordinates), dragCoefficient(dragCoefficient), midsection(midsection), form(form)
 	{
 		updateTrajectoryCoordinates(coordinates);
 
@@ -214,7 +215,7 @@ public:
 
 
 	// Get-functions
-	bool getDrawStatus(const unsigned short int& code)
+	bool getDrawStatus(const unsigned short int& code) const
 	{
 		if (code == TRAJECTORY)
 			return drawTrajectoryStatus;
@@ -228,16 +229,22 @@ public:
 		if (code == GRAVITATIONAL_FORCE)
 			return drawGravitationalStatus;
 	}
-	std::string getObjectName() { return name; }
-	glm::vec3 getObjectCoordinates() { return coordinates; }
-	glm::vec3 getObjectDevelopedForceVector() { return developedForce; }
-	glm::vec3 getObjectDragForceVector() { return dragForce; }
-	glm::vec3 getObjectGravitationalForceVector() { return gravitationalForce; }
+	std::string getObjectName() const { return name; }
+	std::string getObjectForm() const { return form; }
+	glm::vec3 getObjectCoordinates() const { return coordinates; }
+	glm::vec3 getObjectDevelopedForceVector() const { return developedForce; }
+	glm::vec3 getObjectDragForceVector() const { return dragForce; }
+	glm::vec3 getObjectGravitationalForceVector() const { return gravitationalForce; }
+	float getObjectMass() const { return mass; }
+	float getObjectDragCoefficient() const { return dragCoefficient; }
+	float getObjectMidsection() const { return midsection; }
+
 
 	~MaterialPoint()
 	{
 
 	}
+
 
 private:
 	void updateTrajectoryCoordinates(const glm::vec3& coordinates)
@@ -271,7 +278,10 @@ private:
 
 		delete[] forceVectorVertices;
 	}
-
+public:
+	float mass;
+	float midsection;
+	float forceAbsValue;
 private:
 	bool drawTrajectoryStatus;
 	bool drawDevelopedForceStatus;
@@ -279,11 +289,10 @@ private:
 	bool drawGravitationalStatus;
 
 	std::string name;
-	float mass;
+	std::string form;
 	float dragCoefficient;
-	float midsection;
 
-	float forceAbsValue;
+
 	float theta, ph;
 
 	std::vector<GLfloat> trajectoryCoordinates;
