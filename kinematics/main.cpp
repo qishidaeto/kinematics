@@ -38,17 +38,24 @@
 #define HORIZONTAL_ELLIPSOID_FORM                5
 #define CUBE_FORM                                6
 
+// Object forms names
+#define FLAT_PLATE_FORM_NAME                     "Flat plate"
+#define SPHERE_FORM_NAME                         "Sphere"
+#define ROUNDED_HEMISHPERE_FORM_NAME             "Rounded hemisphere"
+#define FLAT_HEMISPHERE_FORM_NAME                "Flat hemisphere"
+#define HORIZONTAL_ELLIPSOID_FORM_NAME           "Horizontal ellipsoid"
+#define CUBE_FORM_NAME                           "Cube"
+
 // Drag coefficients
 #define FLAT_PLATE_DRAG_COEFFICIENT              1.17f
 #define SPHERE_DRAG_COEFFICIENT                  0.47f
 #define ROUNDED_HEMISHPERE_DRAG_COEFFICIENT      0.42f
 #define FLAT_HEMISPHERE_DRAG_COEFFICIENT         1.17f
-#define VERTICAL_ELLIPSOID_DRAG_COEFFICIENT      0.59f
+#define HORIZONTAL_ELLIPSOID_DRAG_COEFFICIENT    0.59f
 #define CUBE_DRAG_COEFFICIENT                    2.05f
 
 // Callback-functions
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
-void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 void mouseCallback(GLFWwindow* window, double xpos, double ypos);
 void voidCallBackFunction(GLFWwindow* window, double xpos, double ypos) {}
 
@@ -66,6 +73,7 @@ bool firstMouse = true;
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 bool showCursor = false;
+bool theWorld = false;
 
 // Objects
 MaterialPoint* controlledObject = nullptr;
@@ -93,7 +101,6 @@ int WinMain()
 
 	glfwSetKeyCallback(window, keyCallback);
 	glfwSetCursorPosCallback(window, mouseCallback);
-	glfwSetScrollCallback(window, scrollCallback);
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -158,28 +165,24 @@ int WinMain()
 
 		for (int i = 0; i < objects.size(); ++i)
 		{
-			if (objects[i].getDrawStatus(TRAJECTORY))
 			objects[i].drawTrajectory(mainShader);
-
-			if (objects[i].getDrawStatus(DEVELOPED_FORCE))
 			objects[i].drawDevelopedForceVector(mainShader);
-
-			if (objects[i].getDrawStatus(DRAG_FORCE))
 			objects[i].drawDragForceVector(mainShader);
-
-			if (objects[i].getDrawStatus(GRAVITATIONAL_FORCE))
 			objects[i].drawGravitationalForceVector(mainShader);
 		}
 
 		if (renderingDeltaTime >= 0.10f)
 			renderingDeltaTime = 0.0f;
 
-		if (renderingDeltaTime >= 0.01f)
+		if (!theWorld)
 		{
-			for (int i = 0; i < objects.size(); ++i)
-				objects[i].computeInstantCharachteristics(objects, ambientDensity, renderingDeltaTime);
+			if (renderingDeltaTime >= 0.01f)
+			{
+				for (int i = 0; i < objects.size(); ++i)
+					objects[i].computeInstantCharachteristics(objects, ambientDensity, renderingDeltaTime);
 
-			renderingDeltaTime = 0.0f;
+				renderingDeltaTime = 0.0f;
+			}
 		}
 
 		glfwSwapBuffers(window);
@@ -212,10 +215,9 @@ void displayGUImenu()
 
 		if (menuCreateObject)
 		{
-			ImGui::SetNextWindowPos({ screenWidth - 315.0f, 30.0f });
-			ImGui::SetNextWindowSize({ 250.0f, 400.0f });
+			ImGui::SetNextWindowSize({ 250.0f, 450.0f });
 
-			ImGui::Begin("Object creating", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+			ImGui::Begin("Object creating", NULL, ImGuiWindowFlags_NoResize);
 
 			static char nameBuffer[16];
 			ImGui::InputText("Name", nameBuffer, IM_ARRAYSIZE(nameBuffer), ImGuiInputTextFlags_None | ImGuiInputTextFlags_CharsNoBlank);
@@ -223,23 +225,16 @@ void displayGUImenu()
 			static float mass = 0.1f;
 			ImGui::InputFloat("Mass", &mass, 0.1f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsScientific);
 
-			if (mass <= 0.0f)
-			{
-				ImGui::PushStyleColor(NULL, { 1.0f, 0.0f, 0.0f, 1.0f });
-				ImGui::Text("Incorrect object mass");
-				ImGui::PopStyleColor();
-			}
-
 			static GLfloat x = 0.0f;
-			ImGui::InputFloat("X", &x, 0.1f, 0.1f, "%.3f");
+			ImGui::InputFloat("X", &x, 0.1f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsScientific);
 
 			static GLfloat y = 0.0f;
-			ImGui::InputFloat("Y", &y, 0.1f, 0.1f, "%.3f");
+			ImGui::InputFloat("Y", &y, 0.1f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsScientific);
 
 			static GLfloat z = 0.0f;
-			ImGui::InputFloat("Z", &z, 0.1f, 0.1f, "%.3f");
+			ImGui::InputFloat("Z", &z, 0.1f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsScientific);
 
-			ImGui::Text("Object form (Cf):");
+			ImGui::Text("Object form:");
 			static int objectForm = 0;
 
 			ImGui::RadioButton("Flat plate", &objectForm, FLAT_PLATE_FORM);
@@ -257,15 +252,41 @@ void displayGUImenu()
 			if (ImGui::Button("Create"))
 			{
 				float dragCoefficient = 0.0f;
+				std::string form = "";
 
-				if (objectForm == FLAT_PLATE_FORM) dragCoefficient = FLAT_PLATE_DRAG_COEFFICIENT;
-				if (objectForm == SPHERE_FORM) dragCoefficient = SPHERE_DRAG_COEFFICIENT;
-				if (objectForm == ROUNDED_HEMISHPERE_FORM) dragCoefficient = ROUNDED_HEMISHPERE_DRAG_COEFFICIENT;
-				if (objectForm == FLAT_HEMISPHERE_FORM) dragCoefficient = FLAT_HEMISPHERE_DRAG_COEFFICIENT;
-				if (objectForm == HORIZONTAL_ELLIPSOID_FORM) dragCoefficient = VERTICAL_ELLIPSOID_DRAG_COEFFICIENT;
-				if (objectForm == CUBE_FORM) dragCoefficient = CUBE_DRAG_COEFFICIENT;
+				if (objectForm == FLAT_PLATE_FORM)
+				{
+					dragCoefficient = FLAT_PLATE_DRAG_COEFFICIENT;
+					form = FLAT_PLATE_FORM_NAME;
+				}
 
-				objects.push_back({ nameBuffer, mass, {x, y, z}, dragCoefficient, midsection });
+				if (objectForm == SPHERE_FORM)
+				{
+					dragCoefficient = SPHERE_DRAG_COEFFICIENT;
+					form = SPHERE_FORM_NAME;
+				}
+				if (objectForm == ROUNDED_HEMISHPERE_FORM)
+				{
+					dragCoefficient = ROUNDED_HEMISHPERE_DRAG_COEFFICIENT;
+					form = ROUNDED_HEMISHPERE_FORM_NAME;
+				}
+				if (objectForm == FLAT_HEMISPHERE_FORM)
+				{
+					dragCoefficient = FLAT_HEMISPHERE_DRAG_COEFFICIENT;
+					form = FLAT_HEMISPHERE_FORM_NAME;
+				}
+				if (objectForm == HORIZONTAL_ELLIPSOID_FORM)
+				{
+					dragCoefficient = HORIZONTAL_ELLIPSOID_DRAG_COEFFICIENT;
+					form = HORIZONTAL_ELLIPSOID_FORM_NAME;
+				}
+				if (objectForm == CUBE_FORM)
+				{
+					dragCoefficient = CUBE_DRAG_COEFFICIENT;
+					form = CUBE_FORM_NAME;
+				}
+
+				objects.push_back({ nameBuffer, form, mass, dragCoefficient, midsection, {x, y, z} });
 				controlledObject = &objects[objects.size() - 1];
 			}
 
@@ -276,13 +297,11 @@ void displayGUImenu()
 
 			ImGui::End();
 		}
-
 		if (menuObjectList)
 		{
-			ImGui::SetNextWindowPos({ 315.0f, 30.0f });
-			ImGui::SetNextWindowSize({ 275.0f, 800.0f });
+			ImGui::SetNextWindowSize({ 275.0f, 400.0f });
 
-			ImGui::Begin("Objects list", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+			ImGui::Begin("Objects list", NULL, ImGuiWindowFlags_NoResize);
 
 			if (ImGui::TreeNode("Objects"))
 			{
@@ -293,35 +312,83 @@ void displayGUImenu()
 
 					if (ImGui::TreeNode((void*)(intptr_t)i, "%s", objects[i].getObjectName()))
 					{
+						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
+
+						ImGui::Text("Object properties:");
+						ImGui::DragFloat("Mass, kg", &objects[i].mass, 0.005f);
+						ImGui::Text("Form:%s", objects[i].getObjectForm());
+						ImGui::Text("Drag coefficient:%f", objects[i].getObjectDragCoefficient());
+						ImGui::DragFloat("Midsection, m^2", &objects[i].midsection, 0.005f);
+
+
 						ImGui::Text("Coordinates:");
+
+						ImGui::PushStyleColor(NULL, { 1.0f, 0.0f, 0.0f, 1.0f });
 						ImGui::Text("X:%f m", objects[i].getObjectCoordinates().x);
+						ImGui::PopStyleColor();
+
+						ImGui::PushStyleColor(NULL, { 0.0f, 1.0f, 0.0f, 1.0f });
 						ImGui::Text("Y:%f m", objects[i].getObjectCoordinates().y);
+						ImGui::PopStyleColor();
+
+						ImGui::PushStyleColor(NULL, { 0.0f, 0.0f, 1.0f, 1.0f });
 						ImGui::Text("Z:%f m", objects[i].getObjectCoordinates().z);
+						ImGui::PopStyleColor();
 
 						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
 
 						ImGui::Text("Developed Force(F):");
-						ImGui::Text("Fx:%f N", objects[i].getObjectDevelopedForceVector().x);
-						ImGui::Text("Fy:%f N", objects[i].getObjectDevelopedForceVector().y);
-						ImGui::Text("Fz:%f N", objects[i].getObjectDevelopedForceVector().z);
+						ImGui::DragFloat("F, N", &objects[i].forceAbsValue, 0.05f);
+
+						ImGui::PushStyleColor(NULL, { 1.0f, 0.0f, 0.0f, 1.0f });
+						ImGui::Text("Fgx:%f N", objects[i].getObjectDevelopedForceVector().x);
+						ImGui::PopStyleColor();
+
+						ImGui::PushStyleColor(NULL, { 0.0f, 1.0f, 0.0f, 1.0f });
+						ImGui::Text("Fgy:%f N", objects[i].getObjectDevelopedForceVector().y);
+						ImGui::PopStyleColor();
+
+						ImGui::PushStyleColor(NULL, { 0.0f, 0.0f, 1.0f, 1.0f });
+						ImGui::Text("Fgz:%f N", objects[i].getObjectDevelopedForceVector().z);
+						ImGui::PopStyleColor();
 
 						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
 
 						ImGui::Text("Drag Force(Fd):");
-						ImGui::Text("Fdx:%f N", objects[i].getObjectDragForceVector().x);
-						ImGui::Text("Fdy:%f N", objects[i].getObjectDragForceVector().y);
-						ImGui::Text("Fdz:%f N", objects[i].getObjectDragForceVector().z);
+						ImGui::Text("Fd:%f N", glm::length(objects[i].getObjectDragForceVector()));
+
+						ImGui::PushStyleColor(NULL, { 1.0f, 0.0f, 0.0f, 1.0f });
+						ImGui::Text("Fgx:%f N", objects[i].getObjectDragForceVector().x);
+						ImGui::PopStyleColor();
+
+						ImGui::PushStyleColor(NULL, { 0.0f, 1.0f, 0.0f, 1.0f });
+						ImGui::Text("Fgy:%f N", objects[i].getObjectDragForceVector().y);
+						ImGui::PopStyleColor();
+
+						ImGui::PushStyleColor(NULL, { 0.0f, 0.0f, 1.0f, 1.0f });
+						ImGui::Text("Fgz:%f N", objects[i].getObjectDragForceVector().z);
+						ImGui::PopStyleColor();
 
 						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
 
 						ImGui::Text("Gravitational Force(Fg):");
+						ImGui::Text("Fg:%f N", glm::length(objects[i].getObjectGravitationalForceVector()));
+
+						ImGui::PushStyleColor(NULL, { 1.0f, 0.0f, 0.0f, 1.0f });
 						ImGui::Text("Fgx:%f N", objects[i].getObjectGravitationalForceVector().x);
+						ImGui::PopStyleColor();
+
+						ImGui::PushStyleColor(NULL, { 0.0f, 1.0f, 0.0f, 1.0f });
 						ImGui::Text("Fgy:%f N", objects[i].getObjectGravitationalForceVector().y);
+						ImGui::PopStyleColor();
+
+						ImGui::PushStyleColor(NULL, { 0.0f, 0.0f, 1.0f, 1.0f });
 						ImGui::Text("Fgz:%f N", objects[i].getObjectGravitationalForceVector().z);
+						ImGui::PopStyleColor();
 
 						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
 
-						if (ImGui::SmallButton("Delete object")) 
+						if (ImGui::SmallButton("Delete object"))
 							objects.erase(objects.begin() + i);
 
 						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
@@ -408,6 +475,14 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
 		}
 	}
 
+	if (key == GLFW_KEY_F9 && action == GLFW_PRESS)
+	{
+		if (theWorld)
+			theWorld = false;
+
+		else theWorld = true;
+	}
+
 	if (key >= 0 && key < 1024)
 	{
 		if (action == GLFW_PRESS)
@@ -433,9 +508,4 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos)
 	lastY = ypos;
 
 	mainCamera.ProcessMouseMovement(xoffset, yoffset);
-}
-
-void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
-{
-	mainCamera.ProcessMouseScroll(yoffset);
 }
