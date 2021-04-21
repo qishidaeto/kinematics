@@ -77,6 +77,7 @@ float ambientDensity = 0.0f;
 
 // GUI Menu
 bool menuCreateObject = false;
+bool menuObjectList = false;
 void displayGUImenu();
 
 int WinMain()
@@ -157,9 +158,16 @@ int WinMain()
 
 		for (int i = 0; i < objects.size(); ++i)
 		{
+			if (objects[i].getDrawStatus(TRAJECTORY))
 			objects[i].drawTrajectory(mainShader);
+
+			if (objects[i].getDrawStatus(DEVELOPED_FORCE))
 			objects[i].drawDevelopedForceVector(mainShader);
-			objects[i].drawIncidentFlowForceVector(mainShader);
+
+			if (objects[i].getDrawStatus(DRAG_FORCE))
+			objects[i].drawDragForceVector(mainShader);
+
+			if (objects[i].getDrawStatus(GRAVITATIONAL_FORCE))
 			objects[i].drawGravitationalForceVector(mainShader);
 		}
 
@@ -195,6 +203,9 @@ void displayGUImenu()
 		{
 			if (ImGui::MenuItem("Create Object"))
 				menuCreateObject = true;
+
+			if (ImGui::MenuItem("Objects List"))
+				menuObjectList = true;
 
 			ImGui::EndMenu();
 		}
@@ -266,6 +277,64 @@ void displayGUImenu()
 			ImGui::End();
 		}
 
+		if (menuObjectList)
+		{
+			ImGui::SetNextWindowPos({ 315.0f, 30.0f });
+			ImGui::SetNextWindowSize({ 275.0f, 800.0f });
+
+			ImGui::Begin("Objects list", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+
+			if (ImGui::TreeNode("Objects"))
+			{
+				for (int i = 0; i < objects.size(); ++i)
+				{
+					if (i == 0)
+						ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+
+					if (ImGui::TreeNode((void*)(intptr_t)i, "%s", objects[i].getObjectName()))
+					{
+						ImGui::Text("Coordinates:");
+						ImGui::Text("X:%f m", objects[i].getObjectCoordinates().x);
+						ImGui::Text("Y:%f m", objects[i].getObjectCoordinates().y);
+						ImGui::Text("Z:%f m", objects[i].getObjectCoordinates().z);
+
+						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
+
+						ImGui::Text("Developed Force(F):");
+						ImGui::Text("Fx:%f N", objects[i].getObjectDevelopedForceVector().x);
+						ImGui::Text("Fy:%f N", objects[i].getObjectDevelopedForceVector().y);
+						ImGui::Text("Fz:%f N", objects[i].getObjectDevelopedForceVector().z);
+
+						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
+
+						ImGui::Text("Drag Force(Fd):");
+						ImGui::Text("Fdx:%f N", objects[i].getObjectDragForceVector().x);
+						ImGui::Text("Fdy:%f N", objects[i].getObjectDragForceVector().y);
+						ImGui::Text("Fdz:%f N", objects[i].getObjectDragForceVector().z);
+
+						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
+
+						ImGui::Text("Gravitational Force(Fg):");
+						ImGui::Text("Fgx:%f N", objects[i].getObjectGravitationalForceVector().x);
+						ImGui::Text("Fgy:%f N", objects[i].getObjectGravitationalForceVector().y);
+						ImGui::Text("Fgz:%f N", objects[i].getObjectGravitationalForceVector().z);
+
+						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
+
+						if (ImGui::SmallButton("Delete object")) 
+							objects.erase(objects.begin() + i);
+
+						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
+
+						ImGui::TreePop();
+					}
+				}
+				ImGui::TreePop();
+			}
+
+			ImGui::End();
+		}
+
 		ImGui::EndMainMenuBar();
 	}
 
@@ -315,16 +384,6 @@ void doCameraMovement()
 		mainCamera.ProcessKeyboard(INCREASE_CAMERA_VELOCITY, deltaTime);
 	if (keys[GLFW_KEY_RIGHT_BRACKET])
 		mainCamera.ProcessKeyboard(DECREASE_CAMERA_VELOCITY, deltaTime);
-
-	if (keys[GLFW_KEY_X] && keys[GLFW_KEY_0])
-		mainCamera.SetCameraPoisition(glm::vec3(5.0f, 5.0f, 5.0f));
-
-	if (keys[GLFW_KEY_F])
-		if (controlledObject != nullptr)
-		{
-			glm::vec3 coordinates = (*controlledObject).getObjectCoordinates();
-			mainCamera.SetCameraPoisition(glm::vec3(coordinates.x, coordinates.y, coordinates.z));
-		}
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
