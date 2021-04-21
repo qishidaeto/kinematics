@@ -124,22 +124,6 @@ public:
         this->updateCameraVectors();
     }
 
-    // Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
-    void ProcessMouseScroll(GLfloat yoffset)
-    {
-        if (this->Zoom >= 1.0f && this->Zoom <= 45.0f)
-            this->Zoom -= yoffset;
-        if (this->Zoom <= 1.0f)
-            this->Zoom = 1.0f;
-        if (this->Zoom >= 45.0f)
-            this->Zoom = 45.0f;
-    }
-    
-    void SetCameraPoisition(const glm::vec3& coordinates)
-    {
-        Position = coordinates;
-    }
-
 private:
     // Calculates the front vector from the Camera's (updated) Eular Angles
     void updateCameraVectors()
