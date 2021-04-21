@@ -8,10 +8,17 @@
 #include <glm/glm/vec3.hpp>
 #include <glm/glm/trigonometric.hpp>
 
+// Classes
 #include "Shader.h"
 #include "Camera.h"
 
+// Check status code
+#define TRAJECTORY          1
+#define DEVELOPED_FORCE     2
+#define DRAG_FORCE          3
+#define GRAVITATIONAL_FORCE 4
 
+// Force vector control
 enum forceVector {
 	RAISE_DEVELOPED_FORCE_VECTOR,
 	LOWER_DEVELOPED_FORCE_VECTOR,
@@ -34,19 +41,19 @@ public:
 	{
 		updateTrajectoryCoordinates(coordinates);
 
-		developedForce = { 0.0f, 0.0f, 0.0f };
-
 		forceAbsValue = 0.0f;
 		theta = 0.0f;
 		ph = 0.0f;
 
+		developedForce = { 0.0f, 0.0f, 0.0f };
 		dragForce = { 0.0f, 0.0f, 0.0f };
 		gravitationalForce = { 0.0f, 0.0f, 0.0f };
 
 		velocity = { 0.0f, 0.0f, 0.0f };
+		acceleration = { 0.0f, 0.0f, 0.0f };
 	}
    
-	// Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
+	// Object control-function
 	void ProcessKeyboardObject(forceVector key, GLfloat deltaTime)
 	{
 		GLfloat deltaForce = 1.0f;
@@ -72,6 +79,7 @@ public:
 		}
 	}
 
+	// Compute charachteristics
 	void computeInstantCharachteristics(const std::vector<MaterialPoint> objects, const float& ambientDensity, const float& dt)
 	{
 		gravitationalForce = { 0.0f, 0.0f, 0.0f };
@@ -79,7 +87,7 @@ public:
 		const float gravitationalConstant = 6.6743e-11f;
 
 		for (const MaterialPoint& object : objects)
-			if (object.getObjectName() != getObjectName())
+			if (object.name != this->name)
 				gravitationalForce += gravitationalConstant * object.mass * mass / glm::length(object.coordinates - coordinates) * glm::normalize(object.coordinates - coordinates);
 
 		//Frx = Cf * q * Vx^2 / 2 * S
@@ -97,29 +105,30 @@ public:
 		developedForce.z = forceAbsValue * cos(glm::radians(theta)) * cos(glm::radians(ph));
 
 		// ax = (Fx - Fdx + Fgx) / m
-		fullAcceleration.x = (developedForce.x - dragForce.x + gravitationalForce.x) / mass;
+		acceleration.x = (developedForce.x - dragForce.x + gravitationalForce.x) / mass;
 		// ay = (Fy - Fdy + Fgy) / m
-		fullAcceleration.y = (developedForce.y - dragForce.y + gravitationalForce.y) / mass;
+		acceleration.y = (developedForce.y - dragForce.y + gravitationalForce.y) / mass;
 		// az = (Fz - Fdz + Fgz) / m
-		fullAcceleration.z = (developedForce.z - dragForce.z + gravitationalForce.z) / mass;
+		acceleration.z = (developedForce.z - dragForce.z + gravitationalForce.z) / mass;
 
-		//Vx = V0x + ax*dt
-		velocity.x += fullAcceleration.x * dt;
-		//Vy = V0y + ay*dt
-		velocity.y += fullAcceleration.y * dt;
-		//Vz = V0z + az*dt
-		velocity.z += fullAcceleration.z * dt;
+		//Vx = V0x + ax * dt
+		velocity.x += acceleration.x * dt;
+		//Vy = V0y + ay * dt
+		velocity.y += acceleration.y * dt;
+		//Vz = V0z + az * dt
+		velocity.z += acceleration.z * dt;
 
-		//x = x0 + Vx*dt
+		//x = x0 + Vx * dt
 		coordinates.x += velocity.x * dt;
-		//y = y0 + Vy*dt
+		//y = y0 + Vy * dt
 		coordinates.y += velocity.y * dt;
-		//z = z0 + Vz*dt
+		//z = z0 + Vz * dt
 		coordinates.z += velocity.z * dt;
 
 		updateTrajectoryCoordinates(coordinates);
 	}
 
+	// Draw-functions
 	void drawTrajectory(const Shader& shader)
 	{	
 		GLuint VAO;
@@ -148,8 +157,7 @@ public:
 		glDeleteBuffers(1, &VBO);
 		glDeleteVertexArrays(1, &VAO);
 	}
-
-	void drawIncidentFlowForceVector(const Shader& shader)
+	void drawDragForceVector(const Shader& shader)
 	{
 		GLuint VAO;
 		GLuint VBO;
@@ -204,14 +212,27 @@ public:
 		glDeleteBuffers(1, &VBO);
 	}
 
-	std::string getObjectName() const
+
+	// Get-functions
+	bool getDrawStatus(const unsigned short int& code)
 	{
-		return name;
+		if (code == TRAJECTORY)
+			return drawTrajectoryStatus;
+
+		if (code == DEVELOPED_FORCE)
+			return drawDevelopedForceStatus;
+
+		if (code == DRAG_FORCE)
+			return drawDragForceStatus;
+
+		if (code == GRAVITATIONAL_FORCE)
+			return drawGravitationalStatus;
 	}
-	glm::vec3 getObjectCoordinates() const
-	{
-		return coordinates;
-	}
+	std::string getObjectName() { return name; }
+	glm::vec3 getObjectCoordinates() { return coordinates; }
+	glm::vec3 getObjectDevelopedForceVector() { return developedForce; }
+	glm::vec3 getObjectDragForceVector() { return dragForce; }
+	glm::vec3 getObjectGravitationalForceVector() { return gravitationalForce; }
 
 	~MaterialPoint()
 	{
@@ -225,7 +246,6 @@ private:
 		trajectoryCoordinates.push_back(coordinates.y);
 		trajectoryCoordinates.push_back(coordinates.z);
 	}
-
 	void updateForceCoordinatesBuffer(const GLuint& VAO, const GLuint& VBO, const glm::vec3& force) const
 	{
 		GLfloat* forceVectorVertices = new GLfloat[6];
@@ -253,9 +273,10 @@ private:
 	}
 
 private:
-
-
-
+	bool drawTrajectoryStatus;
+	bool drawDevelopedForceStatus;
+	bool drawDragForceStatus;
+	bool drawGravitationalStatus;
 
 	std::string name;
 	float mass;
@@ -273,5 +294,5 @@ private:
 	glm::vec3 gravitationalForce;
 
 	glm::vec3 velocity;
-	glm::vec3 fullAcceleration;
+	glm::vec3 acceleration;
 };
