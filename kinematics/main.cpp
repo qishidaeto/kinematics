@@ -81,11 +81,12 @@ std::vector<MaterialPoint> objects;
 void doObjectMovement();
 
 // Ambient density (for calculation of environment coefficient resistance)
-float ambientDensity = 0.0f;
+static float ambientDensity = 0.0f;
 
 // GUI Menu
 bool menuCreateObject = false;
 bool menuObjectList = false;
+bool menuWorldOptions = false;
 void displayGUImenu();
 
 int WinMain()
@@ -204,18 +205,21 @@ void displayGUImenu()
 	{
 		if (ImGui::BeginMenu("Menu"))
 		{
-			if (ImGui::MenuItem("Create Object"))
+			if (ImGui::MenuItem("Create object"))
 				menuCreateObject = true;
 
 			if (ImGui::MenuItem("Objects List"))
 				menuObjectList = true;
+
+			if (ImGui::MenuItem("World options"))
+				menuWorldOptions = true;
 
 			ImGui::EndMenu();
 		}
 
 		if (menuCreateObject)
 		{
-			ImGui::SetNextWindowSize({ 250.0f, 450.0f });
+			ImGui::SetNextWindowSize({ 250.0f, 400.0f });
 
 			ImGui::Begin("Object creating", NULL, ImGuiWindowFlags_NoResize);
 
@@ -299,7 +303,7 @@ void displayGUImenu()
 		}
 		if (menuObjectList)
 		{
-			ImGui::SetNextWindowSize({ 275.0f, 400.0f });
+			ImGui::SetNextWindowSize({ 500.0f, 900.0f });
 
 			ImGui::Begin("Objects list", NULL, ImGuiWindowFlags_NoResize);
 
@@ -310,7 +314,7 @@ void displayGUImenu()
 					if (i == 0)
 						ImGui::SetNextItemOpen(true, ImGuiCond_Once);
 
-					if (ImGui::TreeNode((void*)(intptr_t)i, "%s", objects[i].getObjectName()))
+					if (ImGui::TreeNode((void*)(intptr_t)i, "%s", objects[i].getObjectName(), ImGuiInputTextFlags_None))
 					{
 						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -337,19 +341,53 @@ void displayGUImenu()
 
 						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
 
-						ImGui::Text("Developed Force(F):");
-						ImGui::DragFloat("F, N", &objects[i].forceAbsValue, 0.05f);
+						ImGui::Text("Velocity (V):");
+						ImGui::Text("Fg:%f m/s", glm::length(objects[i].getObjectVelocityVector()));
 
 						ImGui::PushStyleColor(NULL, { 1.0f, 0.0f, 0.0f, 1.0f });
-						ImGui::Text("Fgx:%f N", objects[i].getObjectDevelopedForceVector().x);
+						ImGui::Text("Vx:%f m/s", objects[i].getObjectVelocityVector().x);
 						ImGui::PopStyleColor();
 
 						ImGui::PushStyleColor(NULL, { 0.0f, 1.0f, 0.0f, 1.0f });
-						ImGui::Text("Fgy:%f N", objects[i].getObjectDevelopedForceVector().y);
+						ImGui::Text("Vy:%f m/s", objects[i].getObjectVelocityVector().y);
 						ImGui::PopStyleColor();
 
 						ImGui::PushStyleColor(NULL, { 0.0f, 0.0f, 1.0f, 1.0f });
-						ImGui::Text("Fgz:%f N", objects[i].getObjectDevelopedForceVector().z);
+						ImGui::Text("Vz:%f m/s", objects[i].getObjectVelocityVector().z);
+						ImGui::PopStyleColor();
+
+						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
+
+						ImGui::Text("Acceleration (a):");
+						ImGui::Text("a:%f m/s^2", glm::length(objects[i].getObjectAccelerationVector()));
+
+						ImGui::PushStyleColor(NULL, { 1.0f, 0.0f, 0.0f, 1.0f });
+						ImGui::Text("ax:%f m/s^2", objects[i].getObjectAccelerationVector().x);
+						ImGui::PopStyleColor();
+
+						ImGui::PushStyleColor(NULL, { 0.0f, 1.0f, 0.0f, 1.0f });
+						ImGui::Text("ay:%f m/s^2", objects[i].getObjectAccelerationVector().y);
+						ImGui::PopStyleColor();
+
+						ImGui::PushStyleColor(NULL, { 0.0f, 0.0f, 1.0f, 1.0f });
+						ImGui::Text("az:%f m/s^2", objects[i].getObjectAccelerationVector().z);
+						ImGui::PopStyleColor();
+
+						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
+
+						ImGui::Text("Developed Force(F):");
+						ImGui::DragFloat("N", &objects[i].forceAbsValue, 0.05f);
+
+						ImGui::PushStyleColor(NULL, { 1.0f, 0.0f, 0.0f, 1.0f });
+						ImGui::Text("Fx:%f N", objects[i].getObjectDevelopedForceVector().x);
+						ImGui::PopStyleColor();
+
+						ImGui::PushStyleColor(NULL, { 0.0f, 1.0f, 0.0f, 1.0f });
+						ImGui::Text("Fy:%f N", objects[i].getObjectDevelopedForceVector().y);
+						ImGui::PopStyleColor();
+
+						ImGui::PushStyleColor(NULL, { 0.0f, 0.0f, 1.0f, 1.0f });
+						ImGui::Text("Fz:%f N", objects[i].getObjectDevelopedForceVector().z);
 						ImGui::PopStyleColor();
 
 						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
@@ -358,15 +396,15 @@ void displayGUImenu()
 						ImGui::Text("Fd:%f N", glm::length(objects[i].getObjectDragForceVector()));
 
 						ImGui::PushStyleColor(NULL, { 1.0f, 0.0f, 0.0f, 1.0f });
-						ImGui::Text("Fgx:%f N", objects[i].getObjectDragForceVector().x);
+						ImGui::Text("Fdx:%f N", objects[i].getObjectDragForceVector().x);
 						ImGui::PopStyleColor();
 
 						ImGui::PushStyleColor(NULL, { 0.0f, 1.0f, 0.0f, 1.0f });
-						ImGui::Text("Fgy:%f N", objects[i].getObjectDragForceVector().y);
+						ImGui::Text("Fdy:%f N", objects[i].getObjectDragForceVector().y);
 						ImGui::PopStyleColor();
 
 						ImGui::PushStyleColor(NULL, { 0.0f, 0.0f, 1.0f, 1.0f });
-						ImGui::Text("Fgz:%f N", objects[i].getObjectDragForceVector().z);
+						ImGui::Text("Fdz:%f N", objects[i].getObjectDragForceVector().z);
 						ImGui::PopStyleColor();
 
 						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
@@ -388,16 +426,35 @@ void displayGUImenu()
 
 						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
 
-						if (ImGui::SmallButton("Delete object"))
-							objects.erase(objects.begin() + i);
+						ImGui::Text("Draw:");
+						ImGui::Checkbox("Trajectory", &objects[i].drawTrajectoryStatus);
+						ImGui::Checkbox("Developed Force", &objects[i].drawDevelopedForceStatus);
+						ImGui::Checkbox("Drag Force", &objects[i].drawDragForceStatus);
+						ImGui::Checkbox("Gravitational Force", &objects[i].drawGravitationalForceStatus);
 
 						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
+
+						if (ImGui::SmallButton("Delete object"))
+							objects.erase(objects.begin() + i);
 
 						ImGui::TreePop();
 					}
 				}
 				ImGui::TreePop();
 			}
+
+			ImGui::End();
+		}
+		if (menuWorldOptions)
+		{
+			ImGui::SetNextWindowSize({ 400.0f, 80.0f });
+
+			ImGui::Begin("World options", NULL, ImGuiWindowFlags_NoResize);
+
+			ImGui::InputFloat("Ambient density", &ambientDensity, 0.1f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsScientific);
+
+			if (ImGui::Button("Close"))
+				menuWorldOptions = false;
 
 			ImGui::End();
 		}
