@@ -29,31 +29,6 @@
 #include "CoordinateSystem.h"
 #include "MaterialPoint.h"
 
-
-// Object forms
-#define FLAT_PLATE_FORM                          1
-#define SPHERE_FORM                              2
-#define ROUNDED_HEMISHPERE_FORM                  3
-#define FLAT_HEMISPHERE_FORM                     4
-#define HORIZONTAL_ELLIPSOID_FORM                5
-#define CUBE_FORM                                6
-
-// Object forms names
-#define FLAT_PLATE_FORM_NAME                     "Flat plate"
-#define SPHERE_FORM_NAME                         "Sphere"
-#define ROUNDED_HEMISHPERE_FORM_NAME             "Rounded hemisphere"
-#define FLAT_HEMISPHERE_FORM_NAME                "Flat hemisphere"
-#define HORIZONTAL_ELLIPSOID_FORM_NAME           "Horizontal ellipsoid"
-#define CUBE_FORM_NAME                           "Cube"
-
-// Drag coefficients
-#define FLAT_PLATE_DRAG_COEFFICIENT              1.17f
-#define SPHERE_DRAG_COEFFICIENT                  0.47f
-#define ROUNDED_HEMISHPERE_DRAG_COEFFICIENT      0.42f
-#define FLAT_HEMISPHERE_DRAG_COEFFICIENT         1.17f
-#define HORIZONTAL_ELLIPSOID_DRAG_COEFFICIENT    0.59f
-#define CUBE_DRAG_COEFFICIENT                    2.05f
-
 // Callback-functions
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouseCallback(GLFWwindow* window, double xpos, double ypos);
@@ -114,7 +89,10 @@ int WinMain()
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	
+	float size_pixels = 22.5f;
+	ImGuiIO& io = ImGui::GetIO();
+	io.Fonts->AddFontFromFileTTF("ubuntu.ttf", size_pixels);
 
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
@@ -123,6 +101,7 @@ int WinMain()
 	// Setup Platform/Renderer backends
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
+
 
 
 	// Shader
@@ -219,91 +198,72 @@ void displayGUImenu()
 
 		if (menuCreateObject)
 		{
-			ImGui::SetNextWindowSize({ 250.0f, 400.0f });
+			ImGui::SetNextWindowSize({ 418.0f, 260.0f });
 
 			ImGui::Begin("Object creating", NULL, ImGuiWindowFlags_NoResize);
 
-			static char nameBuffer[16];
-			ImGui::InputText("Name", nameBuffer, IM_ARRAYSIZE(nameBuffer), ImGuiInputTextFlags_None | ImGuiInputTextFlags_CharsNoBlank);
+			ImGui::Text("ID:");
+			ImGui::SameLine();
+			ImGui::PushItemWidth(-FLT_MIN);
+			static char idBuffer[16];
+			ImGui::InputText("   ", idBuffer, IM_ARRAYSIZE(idBuffer), ImGuiInputTextFlags_None | ImGuiInputTextFlags_CharsNoBlank);
 
+			ImGui::Text("Mass:");
+			ImGui::SameLine();
+			ImGui::PushItemWidth(-FLT_MIN);
 			static float mass = 0.1f;
-			ImGui::InputFloat("Mass", &mass, 0.1f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsScientific);
+			ImGui::DragFloat("    ", &mass, 0.005f, ImGuiInputTextFlags_CharsScientific);
 
+			ImGui::Text("Initial coordinates:");
+
+			ImGui::Text("X:");
+			ImGui::SameLine();
 			static GLfloat x = 0.0f;
-			ImGui::InputFloat("X", &x, 0.1f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsScientific);
+			ImGui::PushItemWidth(100.0f);
+			ImGui::DragFloat("", &x, 0.005f, ImGuiInputTextFlags_CharsScientific);
 
+			ImGui::SameLine();
+
+			ImGui::Text("Y:");
+			ImGui::SameLine();
 			static GLfloat y = 0.0f;
-			ImGui::InputFloat("Y", &y, 0.1f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsScientific);
+			ImGui::DragFloat(" ", &y, 0.005f, ImGuiInputTextFlags_CharsScientific);
 
+			ImGui::SameLine();
+
+			ImGui::Text("Z:");
+			ImGui::SameLine();
 			static GLfloat z = 0.0f;
-			ImGui::InputFloat("Z", &z, 0.1f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsScientific);
+			ImGui::DragFloat("  ", &z, 0.005f, ImGuiInputTextFlags_CharsScientific);
 
-			ImGui::Text("Object form:");
-			static int objectForm = 0;
-
-			ImGui::RadioButton("Flat plate", &objectForm, FLAT_PLATE_FORM);
-			ImGui::RadioButton("Sphere", &objectForm, SPHERE_FORM);
-			ImGui::RadioButton("Rounded hemisphere", &objectForm, ROUNDED_HEMISHPERE_FORM);
-			ImGui::RadioButton("Flat hemisphere", &objectForm, FLAT_HEMISPHERE_FORM);
-			ImGui::RadioButton("Horizontal ellipsoid", &objectForm, HORIZONTAL_ELLIPSOID_FORM);
-			ImGui::RadioButton("Cube", &objectForm, CUBE_FORM);
+			ImGui::Text("Drag coefficient:");
+			ImGui::SameLine();
+			ImGui::PushItemWidth(-FLT_MIN);
+			static float dragCoefficient = 0.0f;
+			ImGui::DragFloat("     ", &dragCoefficient, 0.005f, ImGuiInputTextFlags_CharsScientific);
 
 			ImGui::Text("Midsection:");
-
-			static GLfloat midsection = 0.0f;
-			ImGui::InputFloat("S", &midsection, 0.1f, 0.1f, "%.3f");
+			ImGui::SameLine();
+			ImGui::PushItemWidth(-FLT_MIN);
+			static float midsection = 0.0f;
+			ImGui::DragFloat("      ", &midsection, 0.005f, ImGuiInputTextFlags_CharsScientific);
 
 			if (ImGui::Button("Create"))
 			{
-				float dragCoefficient = 0.0f;
-				std::string form = "";
-
-				if (objectForm == FLAT_PLATE_FORM)
-				{
-					dragCoefficient = FLAT_PLATE_DRAG_COEFFICIENT;
-					form = FLAT_PLATE_FORM_NAME;
-				}
-
-				if (objectForm == SPHERE_FORM)
-				{
-					dragCoefficient = SPHERE_DRAG_COEFFICIENT;
-					form = SPHERE_FORM_NAME;
-				}
-				if (objectForm == ROUNDED_HEMISHPERE_FORM)
-				{
-					dragCoefficient = ROUNDED_HEMISHPERE_DRAG_COEFFICIENT;
-					form = ROUNDED_HEMISHPERE_FORM_NAME;
-				}
-				if (objectForm == FLAT_HEMISPHERE_FORM)
-				{
-					dragCoefficient = FLAT_HEMISPHERE_DRAG_COEFFICIENT;
-					form = FLAT_HEMISPHERE_FORM_NAME;
-				}
-				if (objectForm == HORIZONTAL_ELLIPSOID_FORM)
-				{
-					dragCoefficient = HORIZONTAL_ELLIPSOID_DRAG_COEFFICIENT;
-					form = HORIZONTAL_ELLIPSOID_FORM_NAME;
-				}
-				if (objectForm == CUBE_FORM)
-				{
-					dragCoefficient = CUBE_DRAG_COEFFICIENT;
-					form = CUBE_FORM_NAME;
-				}
-
-				objects.push_back({ nameBuffer, form, mass, dragCoefficient, midsection, {x, y, z} });
+				objects.push_back({ idBuffer, mass, dragCoefficient, midsection, {x, y, z} });
 				controlledObject = &objects[objects.size() - 1];
 			}
 
 			ImGui::SameLine();
 
-			if (ImGui::Button("Cancel"))
+			if (ImGui::Button("Close"))
 				menuCreateObject = false;
 
 			ImGui::End();
 		}
 		if (menuObjectList)
 		{
-			ImGui::SetNextWindowSize({ 500.0f, 900.0f });
+			ImGui::SetNextWindowSize({ 500.0f, 1010.0f });
 
 			ImGui::Begin("Objects list", NULL, ImGuiWindowFlags_NoResize);
 
@@ -320,7 +280,7 @@ void displayGUImenu()
 
 						ImGui::Text("Object properties:");
 						ImGui::DragFloat("Mass, kg", &objects[i].mass, 0.005f);
-						ImGui::Text("Form:%s", objects[i].getObjectForm());
+
 						ImGui::Text("Drag coefficient:%f", objects[i].getObjectDragCoefficient());
 						ImGui::DragFloat("Midsection, m^2", &objects[i].midsection, 0.005f);
 
@@ -447,7 +407,7 @@ void displayGUImenu()
 		}
 		if (menuWorldOptions)
 		{
-			ImGui::SetNextWindowSize({ 400.0f, 80.0f });
+			ImGui::SetNextWindowSize({ 700.0f, 110.0f });
 
 			ImGui::Begin("World options", NULL, ImGuiWindowFlags_NoResize);
 

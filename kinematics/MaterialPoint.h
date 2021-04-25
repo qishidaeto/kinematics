@@ -32,13 +32,12 @@ class MaterialPoint
 {
 public:
 	MaterialPoint(
-		const std::string& name,
-		const std::string& form,
+		const std::string& id,
 		const float& mass,
 		const float& dragCoefficient,
 		const float& midsection,
 		const glm::vec3& coordinates
-	) : name(name), mass(mass), coordinates(coordinates), dragCoefficient(dragCoefficient), midsection(midsection), form(form)
+	) : id(id), mass(mass), dragCoefficient(dragCoefficient), midsection(midsection), coordinates(coordinates)
 	{
 		updateTrajectoryCoordinates(coordinates);
 
@@ -93,7 +92,7 @@ public:
 		const float gravitationalConstant = 6.6743e-11f;
 
 		for (const MaterialPoint& object : objects)
-			if (object.name != this->name)
+			if (object.id != this->id)
 				gravitationalForce += gravitationalConstant * object.mass * mass / 
 				glm::length(object.coordinates - coordinates) * glm::normalize(object.coordinates - coordinates);
 
@@ -233,8 +232,7 @@ public:
 
 
 	// Get-functions
-	std::string getObjectName() const { return name; }
-	std::string getObjectForm() const { return form; }
+	std::string getObjectName() const { return id; }
 	glm::vec3 getObjectCoordinates() const { return coordinates; }
 	glm::vec3 getObjectVelocityVector() const { return velocity; }
 	glm::vec3 getObjectDevelopedForceVector() const { return developedForce; }
@@ -295,7 +293,7 @@ public:
 	bool drawGravitationalForceStatus;
 
 private:
-	std::string name;
+	std::string id;
 	std::string form;
 	float dragCoefficient;
 
