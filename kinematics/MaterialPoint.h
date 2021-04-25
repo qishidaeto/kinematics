@@ -52,6 +52,11 @@ public:
 
 		velocity = { 0.0f, 0.0f, 0.0f };
 		acceleration = { 0.0f, 0.0f, 0.0f };
+
+		drawTrajectoryStatus = true;
+		drawDevelopedForceStatus = true;
+		drawDragForceStatus = true;
+		drawGravitationalForceStatus = true;
 	}
    
 	// Object control-function
@@ -89,7 +94,8 @@ public:
 
 		for (const MaterialPoint& object : objects)
 			if (object.name != this->name)
-				gravitationalForce += gravitationalConstant * object.mass * mass / glm::length(object.coordinates - coordinates) * glm::normalize(object.coordinates - coordinates);
+				gravitationalForce += gravitationalConstant * object.mass * mass / 
+				glm::length(object.coordinates - coordinates) * glm::normalize(object.coordinates - coordinates);
 
 		//Frx = Cf * q * Vx^2 / 2 * S
 		dragForce.x = dragCoefficient * ambientDensity * velocity.x * velocity.x / 2 * midsection;
@@ -131,110 +137,110 @@ public:
 
 	// Draw-functions
 	void drawTrajectory(const Shader& shader)
-	{	
-		GLuint VAO;
-		GLuint VBO;
+	{
+		if (drawTrajectoryStatus)
+		{
+			GLuint VAO;
+			GLuint VBO;
 
-		glGenVertexArrays(1, &VAO);
-		glGenBuffers(1, &VBO);
-		
-		glBindVertexArray(VAO);
+			glGenVertexArrays(1, &VAO);
+			glGenBuffers(1, &VBO);
 
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * trajectoryCoordinates.size(), &trajectoryCoordinates[0], GL_DYNAMIC_DRAW);
+			glBindVertexArray(VAO);
 
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-		glEnableVertexAttribArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, VBO);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * trajectoryCoordinates.size(), &trajectoryCoordinates[0], GL_DYNAMIC_DRAW);
 
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+			glEnableVertexAttribArray(0);
 
-		shader.setVector3("color", glm::vec3(1.0f, 1.0f, 0.0f));
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glBindVertexArray(0);
 
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_LINE_STRIP, 0, trajectoryCoordinates.size() / 3);
-		glBindVertexArray(0);
+			shader.setVector3("color", glm::vec3(1.0f, 1.0f, 0.0f));
 
-		glDeleteBuffers(1, &VBO);
-		glDeleteVertexArrays(1, &VAO);
+			glBindVertexArray(VAO);
+			glDrawArrays(GL_LINE_STRIP, 0, trajectoryCoordinates.size() / 3);
+			glBindVertexArray(0);
+
+			glDeleteBuffers(1, &VBO);
+			glDeleteVertexArrays(1, &VAO);
+		}
 	}
 	void drawDragForceVector(const Shader& shader)
 	{
-		GLuint VAO;
-		GLuint VBO;
+		if (drawDragForceStatus)
+		{
+			GLuint VAO;
+			GLuint VBO;
 
-		glGenVertexArrays(1, &VAO);
-		glGenBuffers(1, &VBO);
-		updateForceCoordinatesBuffer(VAO, VBO, -dragForce);
+			glGenVertexArrays(1, &VAO);
+			glGenBuffers(1, &VBO);
+			updateForceCoordinatesBuffer(VAO, VBO, -dragForce);
 
-		shader.setVector3("color", glm::vec3(0.545f, 0.0f, 0.545f));
+			shader.setVector3("color", glm::vec3(0.545f, 0.0f, 0.545f));
 
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_LINE_STRIP, 0, 2);
-		glBindVertexArray(0);
+			glBindVertexArray(VAO);
+			glDrawArrays(GL_LINE_STRIP, 0, 2);
+			glBindVertexArray(0);
 
-		glDeleteVertexArrays(1, &VAO);
-		glDeleteBuffers(1, &VBO);
+			glDeleteVertexArrays(1, &VAO);
+			glDeleteBuffers(1, &VBO);
+		}
 	}
 	void drawDevelopedForceVector(const Shader& shader)
 	{
-		GLuint VAO;
-		GLuint VBO;
+		if (drawDevelopedForceStatus)
+		{
+			GLuint VAO;
+			GLuint VBO;
 
-		glGenVertexArrays(1, &VAO);
-		glGenBuffers(1, &VBO);
-		updateForceCoordinatesBuffer(VAO, VBO, developedForce);
+			glGenVertexArrays(1, &VAO);
+			glGenBuffers(1, &VBO);
+			updateForceCoordinatesBuffer(VAO, VBO, developedForce);
 
-		shader.setVector3("color", glm::vec3(0.0f, 0.392f, 0.0f));
+			shader.setVector3("color", glm::vec3(0.0f, 0.392f, 0.0f));
 
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_LINE_STRIP, 0, 2);
-		glBindVertexArray(0);
+			glBindVertexArray(VAO);
+			glDrawArrays(GL_LINE_STRIP, 0, 2);
+			glBindVertexArray(0);
 
-		glDeleteVertexArrays(1, &VAO);
-		glDeleteBuffers(1, &VBO);
+			glDeleteVertexArrays(1, &VAO);
+			glDeleteBuffers(1, &VBO);
+		}
 	}
 	void drawGravitationalForceVector(const Shader& shader)
 	{
-		GLuint VAO;
-		GLuint VBO;
+		if (drawGravitationalForceStatus)
+		{
+			GLuint VAO;
+			GLuint VBO;
 
-		glGenVertexArrays(1, &VAO);
-		glGenBuffers(1, &VBO);
-		updateForceCoordinatesBuffer(VAO, VBO, gravitationalForce);
+			glGenVertexArrays(1, &VAO);
+			glGenBuffers(1, &VBO);
+			updateForceCoordinatesBuffer(VAO, VBO, gravitationalForce);
 
-		shader.setVector3("color", glm::vec3(0.416f, 0.353f, 0.804f));
+			shader.setVector3("color", glm::vec3(0.416f, 0.353f, 0.804f));
 
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_LINE_STRIP, 0, 2);
-		glBindVertexArray(0);
+			glBindVertexArray(VAO);
+			glDrawArrays(GL_LINE_STRIP, 0, 2);
+			glBindVertexArray(0);
 
-		glDeleteVertexArrays(1, &VAO);
-		glDeleteBuffers(1, &VBO);
+			glDeleteVertexArrays(1, &VAO);
+			glDeleteBuffers(1, &VBO);
+		}
 	}
 
 
 	// Get-functions
-	bool getDrawStatus(const unsigned short int& code) const
-	{
-		if (code == TRAJECTORY)
-			return drawTrajectoryStatus;
-
-		if (code == DEVELOPED_FORCE)
-			return drawDevelopedForceStatus;
-
-		if (code == DRAG_FORCE)
-			return drawDragForceStatus;
-
-		if (code == GRAVITATIONAL_FORCE)
-			return drawGravitationalStatus;
-	}
 	std::string getObjectName() const { return name; }
 	std::string getObjectForm() const { return form; }
 	glm::vec3 getObjectCoordinates() const { return coordinates; }
+	glm::vec3 getObjectVelocityVector() const { return velocity; }
 	glm::vec3 getObjectDevelopedForceVector() const { return developedForce; }
 	glm::vec3 getObjectDragForceVector() const { return dragForce; }
 	glm::vec3 getObjectGravitationalForceVector() const { return gravitationalForce; }
+	glm::vec3 getObjectAccelerationVector() { return acceleration; }
 	float getObjectMass() const { return mass; }
 	float getObjectDragCoefficient() const { return dragCoefficient; }
 	float getObjectMidsection() const { return midsection; }
@@ -282,12 +288,13 @@ public:
 	float mass;
 	float midsection;
 	float forceAbsValue;
-private:
+
 	bool drawTrajectoryStatus;
 	bool drawDevelopedForceStatus;
 	bool drawDragForceStatus;
-	bool drawGravitationalStatus;
+	bool drawGravitationalForceStatus;
 
+private:
 	std::string name;
 	std::string form;
 	float dragCoefficient;
