@@ -61,6 +61,7 @@ static int typeOfSpace = EMPTY_SPACE;
 bool astronomicalObjectEditMenu = false;
 static float astronomicalObjectMass = 0.0f;
 static float astronomicalObjectRadius = 0.0f;
+static float astronomicalObjectSoilAmbientDensity = 0.0f;
 
 // GUI Menu
 bool menuCreateObject = false;
@@ -163,7 +164,7 @@ int WinMain()
 			if (renderingDeltaTime >= 0.01f)
 			{
 				for (int i = 0; i < objects.size(); ++i)
-					objects[i].computeInstantCharachteristics(objects, ambientDensity, renderingDeltaTime, typeOfSpace, astronomicalObjectMass, astronomicalObjectRadius);
+					objects[i].computeInstantCharachteristics(objects, ambientDensity, renderingDeltaTime, typeOfSpace, astronomicalObjectMass, astronomicalObjectRadius, astronomicalObjectSoilAmbientDensity);
 
 				renderingDeltaTime = 0.0f;
 			}
@@ -306,7 +307,7 @@ void displayGUImenu()
 						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
 
 						ImGui::Text("Velocity (V):");
-						ImGui::Text("Fg:%f m/s", glm::length(objects[i].getObjectVelocityVector()));
+						ImGui::Text("V:%f m/s", glm::length(objects[i].getObjectVelocityVector()));
 
 						ImGui::PushStyleColor(NULL, { 1.0f, 0.0f, 0.0f, 1.0f });
 						ImGui::Text("Vx:%f m/s", objects[i].getObjectVelocityVector().x);
@@ -341,6 +342,12 @@ void displayGUImenu()
 
 						ImGui::Text("Developed Force(F):");
 						ImGui::DragFloat("N", &objects[i].forceAbsValue, 0.05f);
+
+						ImGui::Text("Zenith:");
+						ImGui::DragFloat("degrees", &objects[i].theta, 0.05f);
+
+						ImGui::Text("Azimuth:");
+						ImGui::DragFloat("degrees ", &objects[i].ph, 0.05f);
 
 						ImGui::PushStyleColor(NULL, { 1.0f, 0.0f, 0.0f, 1.0f });
 						ImGui::Text("Fx:%f N", objects[i].getObjectDevelopedForceVector().x);
@@ -388,6 +395,21 @@ void displayGUImenu()
 						ImGui::Text("Fgz:%f N", objects[i].getObjectGravitationalForceVector().z);
 						ImGui::PopStyleColor();
 
+						ImGui::Text("Normal reaction Force(Fn):");
+						ImGui::Text("Fn:%f N", glm::length(objects[i].getObjectNormalReactionForceVector()));
+
+						ImGui::PushStyleColor(NULL, { 1.0f, 0.0f, 0.0f, 1.0f });
+						ImGui::Text("Fnx:%f N", objects[i].getObjectNormalReactionForceVector().x);
+						ImGui::PopStyleColor();
+
+						ImGui::PushStyleColor(NULL, { 0.0f, 1.0f, 0.0f, 1.0f });
+						ImGui::Text("Fny:%f N", objects[i].getObjectNormalReactionForceVector().y);
+						ImGui::PopStyleColor();
+
+						ImGui::PushStyleColor(NULL, { 0.0f, 0.0f, 1.0f, 1.0f });
+						ImGui::Text("Fnz:%f N", objects[i].getObjectNormalReactionForceVector().z);
+						ImGui::PopStyleColor();
+
 						ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
 
 						ImGui::Text("Draw:");
@@ -411,7 +433,7 @@ void displayGUImenu()
 		}
 		if (menuWorldOptions)
 		{
-			ImGui::SetNextWindowSize({ 700.0f, 310.0f });
+			ImGui::SetNextWindowSize({ 700.0f, 300.0f });
 
 			ImGui::Begin("World options", NULL, ImGuiWindowFlags_NoResize);
 
@@ -422,15 +444,27 @@ void displayGUImenu()
 			if (astronomicalObjectEditMenu)
 			{
 				ImGui::Text("Astronomical object radius:");
-				ImGui::DragFloat("", &astronomicalObjectRadius, 0.005f);
+				ImGui::SameLine();
+				ImGui::PushItemWidth(-FLT_MIN);
+				ImGui::DragFloat("m", &astronomicalObjectRadius, 0.005f);
 
 				ImGui::Text("Astronomical object mass:");
-				ImGui::DragFloat(" ", &astronomicalObjectMass, 0.005f);
+				ImGui::SameLine();
+				ImGui::PushItemWidth(-FLT_MIN);
+				ImGui::DragFloat("kg", &astronomicalObjectMass, 0.005f);
+
+				ImGui::Text("Astronomical object soil ambient density:");
+				ImGui::SameLine();
+				ImGui::PushItemWidth(-FLT_MIN);
+				ImGui::DragFloat("kg/m^3", &astronomicalObjectSoilAmbientDensity, 0.005f);
 			}
 
 			ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
 
-			ImGui::InputFloat("Ambient density", &ambientDensity, 0.1f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsScientific);
+			ImGui::Text("Ambient density:");
+			ImGui::SameLine();
+			ImGui::PushItemWidth(-FLT_MIN);
+			ImGui::InputFloat(" kg/m^3", &ambientDensity, 0.1f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsScientific);
 
 			if (ImGui::Button("Close"))
 				menuWorldOptions = false;

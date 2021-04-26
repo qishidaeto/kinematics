@@ -15,6 +15,8 @@
 #define EMPTY_SPACE 0
 #define NEAR_AN_ASTRONOMICAL_OBJECT 1
 
+#define GRAVITATIONAL_CONSTANT 6.6743e-11f
+
 // Force vector control
 enum forceVector {
 	RAISE_DEVELOPED_FORCE_VECTOR,
@@ -42,12 +44,13 @@ public:
 		theta = 0.0f;
 		ph = 0.0f;
 
-		developedForce = { 0.0f, 0.0f, 0.0f };
-		dragForce = { 0.0f, 0.0f, 0.0f };
-		gravitationalForce = { 0.0f, 0.0f, 0.0f };
+		developedForce = glm::vec3(0.0f);
+		dragForce = glm::vec3(0.0f);
+		gravitationalForce = glm::vec3(0.0f);
+		normalReactionForce = glm::vec3(0.0f);
 
-		velocity = { 0.0f, 0.0f, 0.0f };
-		acceleration = { 0.0f, 0.0f, 0.0f };
+		velocity = glm::vec3(0.0f);
+		acceleration = glm::vec3(0.0f);
 
 		drawTrajectoryStatus = true;
 		drawDevelopedForceStatus = true;
@@ -88,28 +91,43 @@ public:
 		const float& dt, 
 		const int& typeOfSpace, 
 		const float& astronomicalObjectMass,
-		const float& astronomicalObjectRadius)
+		const float& astronomicalObjectRadius,
+		const float& astronomicalObjectAverageSoilDensity)
 	{
 		if (typeOfSpace == EMPTY_SPACE)
 		{
 			gravitationalForce = { 0.0f, 0.0f, 0.0f };
 
-			const float gravitationalConstant = 6.6743e-11f;
-
 			for (const MaterialPoint& object : objects)
 				if (object.id != this->id)
-					gravitationalForce += gravitationalConstant * object.mass * mass /
+					gravitationalForce += GRAVITATIONAL_CONSTANT * object.mass * mass /
 					glm::length(object.coordinates - coordinates) * glm::normalize(object.coordinates - coordinates);
-		}
-		if (typeOfSpace == NEAR_AN_ASTRONOMICAL_OBJECT)
-		{
-			const float gravitationalConstant = 6.6743e-11f;
-			gravitationalForce = glm::vec3(0.0f, -1.0f, 0.0f) * gravitationalConstant * mass * astronomicalObjectMass / 
-				((astronomicalObjectRadius + coordinates.y) * (astronomicalObjectRadius + coordinates.y));
+
+			if (glm::length(velocity) != 0.0f)
+				dragForce = -glm::normalize(velocity) * (dragCoefficient * ambientDensity * glm::length(velocity) * glm::length(velocity) / 2 * midsection);
 		}
 
-		if (glm::length(velocity) != 0.0f)
-			dragForce = -glm::normalize(velocity) * (dragCoefficient * ambientDensity * glm::length(velocity) * glm::length(velocity) / 2 * midsection);
+		if (typeOfSpace == NEAR_AN_ASTRONOMICAL_OBJECT)
+		{
+			gravitationalForce = glm::vec3(0.0f, -1.0f, 0.0f) * GRAVITATIONAL_CONSTANT * mass * astronomicalObjectMass /
+				((astronomicalObjectRadius + coordinates.y) * (astronomicalObjectRadius + coordinates.y));
+
+				// When the object hits the surface
+				if (coordinates.y < 0.0f)
+				{
+					if (glm::length(velocity) != 0.0f)
+						dragForce = -glm::normalize(velocity) * (dragCoefficient * astronomicalObjectAverageSoilDensity * glm::length(velocity) * glm::length(velocity) / 2 * midsection);
+					normalReactionForce = glm::vec3(0.0f, 1.0f, 0.0f) * mass * GRAVITATIONAL_CONSTANT * astronomicalObjectMass / ((astronomicalObjectRadius) * (astronomicalObjectRadius));
+				}
+
+				// When the object does not touch the surface
+				else
+				{
+					if (glm::length(velocity) != 0.0f)
+						dragForce = -glm::normalize(velocity) * (dragCoefficient * ambientDensity * glm::length(velocity) * glm::length(velocity) / 2 * midsection);
+					normalReactionForce = glm::vec3(0.0f, 0.0f, 0.0f);
+				}
+		}
 
 		// Fx = F * cos(theta) * sin(ph)
 		developedForce.x = forceAbsValue * cos(glm::radians(theta)) * sin(glm::radians(ph));
@@ -118,33 +136,13 @@ public:
 		// Fz = F * cos(theta) * cos(ph)
 		developedForce.z = forceAbsValue * cos(glm::radians(theta)) * cos(glm::radians(ph));
 
-		// ax = (Fx + Fdx + Fgx) / m
-		acceleration.x = (developedForce.x + dragForce.x + gravitationalForce.x) / mass;
-		// ay = (Fy + Fdy + Fgy) / m
-		acceleration.y = (developedForce.y + dragForce.y + gravitationalForce.y) / mass;
-		// az = (Fz + Fdz + Fgz) / m
-		acceleration.z = (developedForce.z + dragForce.z + gravitationalForce.z) / mass;
-
-		//Vx = V0x + ax * dt
-		velocity.x += acceleration.x * dt;
-		//Vy = V0y + ay * dt
-		velocity.y += acceleration.y * dt;
-		//Vz = V0z + az * dt
-		velocity.z += acceleration.z * dt;
-
-		//x = x0 + Vx * dt
-		coordinates.x += velocity.x * dt;
-		//y = y0 + Vy * dt
-		coordinates.y += velocity.y * dt;
-		//z = z0 + Vz * dt
-		coordinates.z += velocity.z * dt;
-
-		if (typeOfSpace == NEAR_AN_ASTRONOMICAL_OBJECT)
-			if (coordinates.y < 0.0f)
-				coordinates.y = 0.0f;
+		acceleration = (developedForce + dragForce + gravitationalForce + normalReactionForce) / mass;
+		velocity += acceleration * dt;
+		coordinates += velocity * dt;
 
 		updateTrajectoryCoordinates(coordinates);
-	}
+		}
+
 
 	// Draw-functions
 	void drawTrajectory(const Shader& shader)
@@ -242,15 +240,15 @@ public:
 		}
 	}
 
-
 	// Get-functions
 	std::string getObjectName() const { return id; }
 	glm::vec3 getObjectCoordinates() const { return coordinates; }
 	glm::vec3 getObjectVelocityVector() const { return velocity; }
+	glm::vec3 getObjectAccelerationVector() { return acceleration; }
 	glm::vec3 getObjectDevelopedForceVector() const { return developedForce; }
 	glm::vec3 getObjectDragForceVector() const { return dragForce; }
 	glm::vec3 getObjectGravitationalForceVector() const { return gravitationalForce; }
-	glm::vec3 getObjectAccelerationVector() { return acceleration; }
+	glm::vec3 getObjectNormalReactionForceVector() { return normalReactionForce; }
 	float getObjectMass() const { return mass; }
 	float getObjectDragCoefficient() const { return dragCoefficient; }
 	float getObjectMidsection() const { return midsection; }
@@ -297,7 +295,10 @@ private:
 public:
 	float mass;
 	float midsection;
+
 	float forceAbsValue;
+	float theta, ph;
+
 
 	bool drawTrajectoryStatus;
 	bool drawDevelopedForceStatus;
@@ -310,7 +311,6 @@ private:
 	float dragCoefficient;
 
 
-	float theta, ph;
 
 	std::vector<GLfloat> trajectoryCoordinates;
 	glm::vec3 coordinates;
@@ -318,6 +318,7 @@ private:
 	glm::vec3 developedForce;
 	glm::vec3 dragForce;
 	glm::vec3 gravitationalForce;
+	glm::vec3 normalReactionForce;
 
 	glm::vec3 velocity;
 	glm::vec3 acceleration;
