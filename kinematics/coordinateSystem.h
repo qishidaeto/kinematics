@@ -39,6 +39,8 @@ struct CoordinateSystem
 
 	void draw(const Shader& shader)
 	{
+		glLineWidth(2.0f);
+
 		glBindVertexArray(VAO);
 		shader.setVector3("color", glm::vec3(1.0f, 0.0f, 0.0f));
 		glDrawArrays(GL_LINE_STRIP, 0, 2);

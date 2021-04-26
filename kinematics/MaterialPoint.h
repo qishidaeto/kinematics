@@ -160,7 +160,7 @@ public:
 			glBindVertexArray(0);
 
 			shader.setVector3("color", glm::vec3(1.0f, 1.0f, 0.0f));
-
+			glLineWidth(2.0f);
 			glBindVertexArray(VAO);
 			glDrawArrays(GL_LINE_STRIP, 0, trajectoryCoordinates.size() / 3);
 			glBindVertexArray(0);
@@ -181,7 +181,7 @@ public:
 			updateForceCoordinatesBuffer(VAO, VBO, dragForce);
 
 			shader.setVector3("color", glm::vec3(0.545f, 0.0f, 0.545f));
-
+			glLineWidth(5.0f);
 			glBindVertexArray(VAO);
 			glDrawArrays(GL_LINE_STRIP, 0, 2);
 			glBindVertexArray(0);
@@ -202,7 +202,7 @@ public:
 			updateForceCoordinatesBuffer(VAO, VBO, developedForce);
 
 			shader.setVector3("color", glm::vec3(0.0f, 0.392f, 0.0f));
-
+			glLineWidth(2.0f);
 			glBindVertexArray(VAO);
 			glDrawArrays(GL_LINE_STRIP, 0, 2);
 			glBindVertexArray(0);
@@ -223,7 +223,7 @@ public:
 			updateForceCoordinatesBuffer(VAO, VBO, gravitationalForce);
 
 			shader.setVector3("color", glm::vec3(0.416f, 0.353f, 0.804f));
-
+			glLineWidth(2.0f);
 			glBindVertexArray(VAO);
 			glDrawArrays(GL_LINE_STRIP, 0, 2);
 			glBindVertexArray(0);
