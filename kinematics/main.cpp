@@ -55,8 +55,12 @@ MaterialPoint* controlledObject = nullptr;
 std::vector<MaterialPoint> objects;
 void doObjectMovement();
 
-// Ambient density (for calculation of environment coefficient resistance)
+// World options
 static float ambientDensity = 0.0f;
+static int typeOfSpace = EMPTY_SPACE;
+bool astronomicalObjectEditMenu = false;
+static float astronomicalObjectMass = 0.0f;
+static float astronomicalObjectRadius = 0.0f;
 
 // GUI Menu
 bool menuCreateObject = false;
@@ -72,7 +76,7 @@ int WinMain()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-	GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "Kinematics", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "Kinematics Graphics Engine", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 
 	glfwSetKeyCallback(window, keyCallback);
@@ -159,7 +163,7 @@ int WinMain()
 			if (renderingDeltaTime >= 0.01f)
 			{
 				for (int i = 0; i < objects.size(); ++i)
-					objects[i].computeInstantCharachteristics(objects, ambientDensity, renderingDeltaTime);
+					objects[i].computeInstantCharachteristics(objects, ambientDensity, renderingDeltaTime, typeOfSpace, astronomicalObjectMass, astronomicalObjectRadius);
 
 				renderingDeltaTime = 0.0f;
 			}
@@ -407,9 +411,24 @@ void displayGUImenu()
 		}
 		if (menuWorldOptions)
 		{
-			ImGui::SetNextWindowSize({ 700.0f, 110.0f });
+			ImGui::SetNextWindowSize({ 700.0f, 310.0f });
 
 			ImGui::Begin("World options", NULL, ImGuiWindowFlags_NoResize);
+
+
+			if (ImGui::RadioButton("Empty space", &typeOfSpace, EMPTY_SPACE)) { astronomicalObjectEditMenu = false; }
+			if (ImGui::RadioButton("Near an astronomical object", &typeOfSpace, NEAR_AN_ASTRONOMICAL_OBJECT)) { astronomicalObjectEditMenu = true; }
+
+			if (astronomicalObjectEditMenu)
+			{
+				ImGui::Text("Astronomical object radius:");
+				ImGui::DragFloat("", &astronomicalObjectRadius, 0.005f);
+
+				ImGui::Text("Astronomical object mass:");
+				ImGui::DragFloat(" ", &astronomicalObjectMass, 0.005f);
+			}
+
+			ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
 
 			ImGui::InputFloat("Ambient density", &ambientDensity, 0.1f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsScientific);
 

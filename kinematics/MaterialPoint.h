@@ -12,11 +12,8 @@
 #include "Shader.h"
 #include "Camera.h"
 
-// Check status code
-#define TRAJECTORY          1
-#define DEVELOPED_FORCE     2
-#define DRAG_FORCE          3
-#define GRAVITATIONAL_FORCE 4
+#define EMPTY_SPACE 0
+#define NEAR_AN_ASTRONOMICAL_OBJECT 1
 
 // Force vector control
 enum forceVector {
@@ -85,23 +82,31 @@ public:
 	}
 
 	// Compute charachteristics
-	void computeInstantCharachteristics(const std::vector<MaterialPoint> objects, const float& ambientDensity, const float& dt)
+	void computeInstantCharachteristics(
+		const std::vector<MaterialPoint> objects, 
+		const float& ambientDensity, 
+		const float& dt, 
+		const int& typeOfSpace, 
+		const float& astronomicalObjectMass,
+		const float& astronomicalObjectRadius)
 	{
-		gravitationalForce = { 0.0f, 0.0f, 0.0f };
+		if (typeOfSpace == EMPTY_SPACE)
+		{
+			gravitationalForce = { 0.0f, 0.0f, 0.0f };
 
-		const float gravitationalConstant = 6.6743e-11f;
+			const float gravitationalConstant = 6.6743e-11f;
 
-		for (const MaterialPoint& object : objects)
-			if (object.id != this->id)
-				gravitationalForce += gravitationalConstant * object.mass * mass / 
-				glm::length(object.coordinates - coordinates) * glm::normalize(object.coordinates - coordinates);
-
-		//Frx = Cf * q * Vx^2 / 2 * S
-		dragForce.x = dragCoefficient * ambientDensity * velocity.x * velocity.x / 2 * midsection;
-		//Fry = Cf * q * Vy^2 / 2 * S
-		dragForce.y = dragCoefficient * ambientDensity * velocity.y * velocity.y / 2 * midsection;
-		//Frz = Cf * q * Vz^2 / 2 * S
-		dragForce.z = dragCoefficient * ambientDensity * velocity.z * velocity.z / 2 * midsection;
+			for (const MaterialPoint& object : objects)
+				if (object.id != this->id)
+					gravitationalForce += gravitationalConstant * object.mass * mass /
+					glm::length(object.coordinates - coordinates) * glm::normalize(object.coordinates - coordinates);
+		}
+		if (typeOfSpace == NEAR_AN_ASTRONOMICAL_OBJECT)
+		{
+			const float gravitationalConstant = 6.6743e-11f;
+			gravitationalForce = glm::vec3(0.0f, -1.0f, 0.0f) * gravitationalConstant * mass * astronomicalObjectMass / 
+				((astronomicalObjectRadius + coordinates.y) * (astronomicalObjectRadius + coordinates.y));
+		}
 
 		if (glm::length(velocity) != 0.0f)
 			dragForce = -glm::normalize(velocity) * (dragCoefficient * ambientDensity * glm::length(velocity) * glm::length(velocity) / 2 * midsection);
@@ -133,6 +138,10 @@ public:
 		coordinates.y += velocity.y * dt;
 		//z = z0 + Vz * dt
 		coordinates.z += velocity.z * dt;
+
+		if (typeOfSpace == NEAR_AN_ASTRONOMICAL_OBJECT)
+			if (coordinates.y < 0.0f)
+				coordinates.y = 0.0f;
 
 		updateTrajectoryCoordinates(coordinates);
 	}
