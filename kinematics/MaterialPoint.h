@@ -103,6 +103,9 @@ public:
 		//Frz = Cf * q * Vz^2 / 2 * S
 		dragForce.z = dragCoefficient * ambientDensity * velocity.z * velocity.z / 2 * midsection;
 
+		if (glm::length(velocity) != 0.0f)
+			dragForce = -glm::normalize(velocity) * (dragCoefficient * ambientDensity * glm::length(velocity) * glm::length(velocity) / 2 * midsection);
+
 		// Fx = F * cos(theta) * sin(ph)
 		developedForce.x = forceAbsValue * cos(glm::radians(theta)) * sin(glm::radians(ph));
 		// Fy = F * sin(theta)
@@ -110,12 +113,12 @@ public:
 		// Fz = F * cos(theta) * cos(ph)
 		developedForce.z = forceAbsValue * cos(glm::radians(theta)) * cos(glm::radians(ph));
 
-		// ax = (Fx - Fdx + Fgx) / m
-		acceleration.x = (developedForce.x - dragForce.x + gravitationalForce.x) / mass;
-		// ay = (Fy - Fdy + Fgy) / m
-		acceleration.y = (developedForce.y - dragForce.y + gravitationalForce.y) / mass;
-		// az = (Fz - Fdz + Fgz) / m
-		acceleration.z = (developedForce.z - dragForce.z + gravitationalForce.z) / mass;
+		// ax = (Fx + Fdx + Fgx) / m
+		acceleration.x = (developedForce.x + dragForce.x + gravitationalForce.x) / mass;
+		// ay = (Fy + Fdy + Fgy) / m
+		acceleration.y = (developedForce.y + dragForce.y + gravitationalForce.y) / mass;
+		// az = (Fz + Fdz + Fgz) / m
+		acceleration.z = (developedForce.z + dragForce.z + gravitationalForce.z) / mass;
 
 		//Vx = V0x + ax * dt
 		velocity.x += acceleration.x * dt;
@@ -175,7 +178,7 @@ public:
 
 			glGenVertexArrays(1, &VAO);
 			glGenBuffers(1, &VBO);
-			updateForceCoordinatesBuffer(VAO, VBO, -dragForce);
+			updateForceCoordinatesBuffer(VAO, VBO, dragForce);
 
 			shader.setVector3("color", glm::vec3(0.545f, 0.0f, 0.545f));
 
